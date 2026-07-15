@@ -2,9 +2,200 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 全局基础样式 */
+/* ============================================================
+ * Material Design 3 风格增强
+ * 基于 DaisyUI 组件，通过自定义类与覆盖实现 MD3 视觉规范
+ * - 字体：Roboto 优先
+ * - State layer：hover/active 半透明叠加（替代涟漪的轻量方案）
+ * - 圆角：card 12px / button full / text-field 4px
+ * ============================================================ */
+
 html,
 body,
 #app {
   height: 100%;
+}
+
+body {
+  font-family: Roboto, system-ui, -apple-system, "Segoe UI",
+    "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- MD3 State layer（轻量涟漪替代） ---- */
+.md3-state {
+  position: relative;
+  isolation: isolate;
+}
+.md3-state::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+.md3-state:hover::after {
+  opacity: 0.08;
+}
+.md3-state:active::after {
+  opacity: 0.12;
+}
+.md3-state > * {
+  position: relative;
+  z-index: 1;
+}
+
+@layer components {
+  /* ---- MD3 按钮：full rounded + state layer ---- */
+  .md3-btn {
+    @apply rounded-full h-10 px-6 text-sm font-medium tracking-wide
+           inline-flex items-center justify-center gap-2
+           md3-state transition-all duration-200
+           disabled:opacity-40 disabled:pointer-events-none
+           normal-case;
+    min-height: 2.5rem;
+  }
+  .md3-btn-sm {
+    @apply h-8 px-4 text-xs;
+    min-height: 2rem;
+  }
+  /* Filled：primary 背景 */
+  .md3-btn-filled {
+    @apply md3-btn bg-primary text-primary-content;
+  }
+  /* Tonal：primary-container 背景 */
+  .md3-btn-tonal {
+    @apply md3-btn bg-secondary text-secondary-content;
+  }
+  /* Outlined：透明背景 + outline 边框 */
+  .md3-btn-outlined {
+    @apply md3-btn bg-transparent text-primary border border-base-300;
+  }
+  /* Text：透明背景 */
+  .md3-btn-text {
+    @apply md3-btn bg-transparent text-primary px-3;
+  }
+
+  /* ---- MD3 卡片变体 ---- */
+  .md3-card {
+    @apply rounded-xl p-4 transition-all duration-200;
+  }
+  /* Filled：surface-container 背景 */
+  .md3-card-filled {
+    @apply md3-card bg-base-200;
+  }
+  /* Outlined：surface 背景 + outline 边框 */
+  .md3-card-outlined {
+    @apply md3-card bg-base-100 border border-base-300;
+  }
+  /* Elevated：surface 背景 + 轻阴影 */
+  .md3-card-elevated {
+    @apply md3-card bg-base-100 shadow-md;
+  }
+
+  /* ---- MD3 可点击卡片 ---- */
+  .md3-card-clickable {
+    @apply md3-card-outlined cursor-pointer md3-state;
+  }
+  .md3-card-clickable:hover {
+    @apply border-primary;
+  }
+
+  /* ---- MD3 输入框：outlined text field ---- */
+  .md3-input {
+    @apply w-full bg-transparent border border-base-300 rounded
+           px-3 h-12 text-sm transition-colors
+           focus:border-primary focus:outline-none
+           placeholder:text-base-content/40;
+  }
+
+  /* ---- MD3 Top App Bar ---- */
+  .md3-appbar {
+    @apply bg-base-100 sticky top-0 z-30 h-16 px-4
+           flex items-center gap-2 border-b border-base-300;
+  }
+  .md3-appbar-title {
+    @apply text-xl font-medium tracking-tight flex-1;
+  }
+
+  /* ---- MD3 底部导航栏 ---- */
+  .md3-navbar-bottom {
+    @apply bg-base-100 border-t border-base-300 sticky bottom-0 z-30
+           h-14 px-4 flex items-center justify-between text-xs;
+  }
+
+  /* ---- MD3 列表项 ---- */
+  .md3-list-item {
+    @apply flex items-center gap-4 h-14 px-4 rounded-xl
+           md3-state cursor-pointer transition-colors;
+  }
+
+  /* ---- MD3 分段按钮（segmented） ---- */
+  .md3-segmented {
+    @apply inline-flex rounded-full border border-base-300 overflow-hidden;
+  }
+  .md3-segmented-btn {
+    @apply px-4 h-9 text-sm font-medium md3-state
+           transition-colors flex-1;
+  }
+  .md3-segmented-btn.active {
+    @apply bg-secondary text-secondary-content;
+  }
+
+  /* ---- MD3 Tabs（下划线式） ---- */
+  .md3-tabs {
+    @apply flex border-b border-base-300;
+  }
+  .md3-tab {
+    @apply flex-1 h-12 text-sm font-medium md3-state
+           flex items-center justify-center gap-2
+           text-base-content/60 transition-colors relative;
+  }
+  .md3-tab.active {
+    @apply text-primary;
+  }
+  .md3-tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    @apply bg-primary;
+  }
+
+  /* ---- MD3 进度条（linear） ---- */
+  .md3-progress {
+    @apply h-1 rounded-full bg-base-300 overflow-hidden;
+  }
+  .md3-progress-bar {
+    @apply h-full bg-primary transition-all duration-300;
+  }
+}
+
+/* ---- DaisyUI 组件圆角覆盖（让默认组件也偏 MD3） ---- */
+.btn {
+  border-radius: 9999px;
+  text-transform: none;
+  font-weight: 500;
+}
+.card {
+  border-radius: 0.75rem;
+}
+.alert {
+  border-radius: 0.75rem;
+}
+.badge {
+  border-radius: 9999px;
+  font-weight: 500;
+}
+.input {
+  border-radius: 0.25rem;
 }

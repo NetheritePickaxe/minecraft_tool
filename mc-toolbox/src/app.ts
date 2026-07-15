@@ -1,8 +1,6 @@
-// 应用框架：卡片墙主页 + 工具详情页 + 底边栏
-// 全部使用 DaisyUI 组件类（navbar / menu / card / btn / footer / tabs）
-// - 主页：响应式 grid，每个非系统模块一张工具卡片
-// - 详情页：顶部返回栏 + 内容区挂载模块
-// - 底边栏：版权 + 设置入口
+// 应用框架：MD3 风格卡片墙主页 + 工具详情页 + 底边栏
+// 视觉规范：Material Design 3（Top App Bar / Filled Card / State Layer / 全圆角按钮）
+// 组件库：DaisyUI 基础 + 自定义 md3-* 类
 
 import {
   createIcons,
@@ -76,23 +74,21 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const settingsModule = modules.find((m) => m.system && m.id === "settings");
 
   root.innerHTML = `
-    <div class="min-h-screen flex flex-col bg-base-200">
-      <!-- 顶部导航栏：DaisyUI navbar -->
-      <header class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30 px-4">
-        <div class="flex-1">
-          <span class="text-lg font-bold">${t("app.title")}</span>
-        </div>
-        <div class="flex-none gap-2">
-          <!-- 语言：DaisyUI dropdown -->
+    <div class="min-h-screen flex flex-col bg-base-100">
+      <!-- MD3 Top App Bar -->
+      <header class="md3-appbar">
+        <span class="md3-appbar-title">${t("app.title")}</span>
+        <div class="flex-none gap-1 flex items-center">
+          <!-- 语言：MD3 dropdown（用 DaisyUI dropdown 结构） -->
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-sm btn-ghost gap-1">
+            <div tabindex="0" role="button" class="md3-btn-text md3-btn-sm gap-1">
               <i data-lucide="languages" class="w-4 h-4"></i>
               <span id="locale-label"></span>
             </div>
-            <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-40 w-40 p-2 shadow border border-base-300"></ul>
+            <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-lg z-40 w-40 p-1 shadow-lg border border-base-300"></ul>
           </div>
-          <!-- 主题切换 -->
-          <button id="theme-btn" class="btn btn-sm btn-ghost btn-circle" aria-label="toggle theme">
+          <!-- 主题切换：icon button -->
+          <button id="theme-btn" class="md3-btn-text md3-btn-sm !px-2" aria-label="toggle theme">
             <i data-lucide="sun-moon" class="w-4 h-4"></i>
           </button>
         </div>
@@ -100,43 +96,38 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
       <main class="flex-1">
         <!-- 卡片墙主页 -->
-        <section id="home-view" class="container mx-auto p-4">
-          <div class="mb-4">
-            <h2 class="text-xl font-bold" data-i18n="app.home"></h2>
-            <p class="text-sm opacity-60 mt-1" data-i18n="app.tagline"></p>
+        <section id="home-view" class="max-w-6xl mx-auto p-4">
+          <div class="mb-5">
+            <h2 class="text-2xl font-normal tracking-tight" data-i18n="app.home"></h2>
+            <p class="text-sm text-base-content/60 mt-1" data-i18n="app.tagline"></p>
           </div>
           <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
-          <div id="empty-hint" class="hidden text-center py-20 opacity-50">
+          <div id="empty-hint" class="hidden text-center py-20 text-base-content/50">
             <p data-i18n="app.empty"></p>
           </div>
         </section>
 
         <!-- 工具详情页 -->
         <section id="detail-view" class="hidden">
-          <div class="bg-base-100 border-b border-base-300 sticky top-16 z-20">
-            <div class="container mx-auto px-4 py-2 flex items-center gap-2">
-              <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                <span data-i18n="app.back"></span>
-              </button>
-              <span id="detail-title" class="font-semibold"></span>
-            </div>
+          <div class="md3-appbar !h-14 top-16">
+            <button id="back-btn" class="md3-btn-text md3-btn-sm !px-2 gap-1">
+              <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+            <span id="detail-title" class="text-lg font-medium flex-1"></span>
           </div>
-          <div id="module-container" class="container mx-auto p-4"></div>
+          <div id="module-container" class="max-w-4xl mx-auto p-4"></div>
         </section>
       </main>
 
-      <!-- 底边栏：DaisyUI footer（精简版，作为状态栏使用） -->
-      <footer class="footer footer-center bg-base-100 border-t border-base-300 px-4 py-2 text-xs opacity-70 sticky bottom-0 z-30">
-        <aside class="flex items-center justify-between w-full">
-          <span>© 2025 MC Toolbox</span>
-          <button id="settings-btn" class="btn btn-xs btn-ghost gap-1" ${
-            settingsModule ? "" : "disabled"
-          }>
-            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-            <span data-i18n="app.settings"></span>
-          </button>
-        </aside>
+      <!-- MD3 底边栏 -->
+      <footer class="md3-navbar-bottom text-base-content/70">
+        <span>© 2025 MC Toolbox</span>
+        <button id="settings-btn" class="md3-btn-text md3-btn-sm gap-1" ${
+          settingsModule ? "" : "disabled"
+        }>
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span data-i18n="app.settings"></span>
+        </button>
       </footer>
     </div>
   `;
@@ -155,7 +146,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   let activeModuleId: string | null = null;
 
-  // 渲染工具卡片墙（DaisyUI card）
+  // 渲染工具卡片墙（MD3 filled card + state layer）
   function renderToolGrid(): void {
     if (tools.length === 0) {
       emptyHint.classList.remove("hidden");
@@ -167,16 +158,16 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     toolGrid.innerHTML = tools
       .map(
         (m) => `
-          <button class="tool-card card bg-base-100 border border-base-300 cursor-pointer text-left transition hover:bg-base-200" data-module-id="${m.id}">
-            <div class="card-body p-4 gap-2">
-              <div class="flex items-center gap-2">
-                <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5 text-primary flex-none"></i>
-                <h3 class="font-semibold text-sm truncate flex-1">${t(m.nameKey)}</h3>
+          <button class="md3-card-clickable text-left" data-module-id="${m.id}">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-secondary text-secondary-content flex items-center justify-center flex-none">
+                <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5"></i>
               </div>
-              <p class="text-xs opacity-60 line-clamp-2">${
-                m.descriptionKey ? t(m.descriptionKey) : ""
-              }</p>
+              <h3 class="font-medium text-sm truncate flex-1">${t(m.nameKey)}</h3>
             </div>
+            <p class="text-xs text-base-content/60 line-clamp-2 leading-relaxed">${
+              m.descriptionKey ? t(m.descriptionKey) : ""
+            }</p>
           </button>
         `,
       )
@@ -190,7 +181,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       LOCALE_OPTIONS.find((o) => o.code === current)?.label ?? current;
     localeMenu.innerHTML = LOCALE_OPTIONS.map(
       (o) =>
-        `<li><a class="locale-option ${o.code === current ? "active" : ""}" data-locale="${o.code}">${o.label}</a></li>`,
+        `<li><a class="locale-option rounded-lg ${o.code === current ? "active bg-secondary text-secondary-content" : ""}" data-locale="${o.code}">${o.label}</a></li>`,
     ).join("");
   }
 
@@ -231,7 +222,9 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   refreshIcons();
 
   toolGrid.addEventListener("click", (e) => {
-    const card = (e.target as HTMLElement).closest<HTMLElement>(".tool-card");
+    const card = (e.target as HTMLElement).closest<HTMLElement>(
+      ".md3-card-clickable",
+    );
     if (!card) return;
     const id = card.dataset.moduleId!;
     const m = tools.find((x) => x.id === id);

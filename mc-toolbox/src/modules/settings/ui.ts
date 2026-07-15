@@ -1,14 +1,10 @@
-// settings 模块 UI
-// 使用 DaisyUI 组件：card / btn-group / join / collapse / table / divider / progress / alert
+// settings 模块 UI（MD3 风格）
+// 使用 MD3 组件：list-item / segmented / outlined card / linear progress / filled button
 // 所有可见文本走 t()，语言切换时通过 refresh() 更新
 
 import { t, onLocaleChange, setLocale, getLocale } from "../../lang";
 import type { LocaleCode } from "../../lang";
-import {
-  applyTheme,
-  getTheme,
-  onThemeChange,
-} from "../../core/theme";
+import { applyTheme, getTheme, onThemeChange } from "../../core/theme";
 import {
   detectPlatform,
   getAppVersion,
@@ -49,105 +45,91 @@ type UpdateState =
 
 export function createUi(container: HTMLElement): SettingsUi {
   const platform: Platform = detectPlatform();
-
   let version = "0.0.0";
   let updateState: UpdateState = { kind: "idle" };
 
   container.innerHTML = `
-    <div class="max-w-2xl mx-auto space-y-4">
-      <!-- 语言：DaisyUI collapse -->
-      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
-        <input type="checkbox" checked />
-        <div class="collapse-title font-medium flex items-center gap-2">
-          <i data-lucide="languages" class="w-4 h-4"></i>
-          <span data-i18n="modules.settings.language.title"></span>
+    <div class="max-w-2xl mx-auto space-y-3">
+      <!-- 语言：MD3 outlined card -->
+      <div class="md3-card-outlined space-y-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="languages" class="w-5 h-5 text-primary"></i>
+          <h3 class="text-base font-medium" data-i18n="modules.settings.language.title"></h3>
         </div>
-        <div class="collapse-content">
-          <div class="btn-group join w-full mt-2" id="set-locale-list"></div>
+        <div class="md3-segmented w-full" id="set-locale-list"></div>
+      </div>
+
+      <!-- 主题：MD3 outlined card -->
+      <div class="md3-card-outlined space-y-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sun-moon" class="w-5 h-5 text-primary"></i>
+          <h3 class="text-base font-medium" data-i18n="modules.settings.theme.title"></h3>
+        </div>
+        <div class="md3-segmented w-full" id="set-theme-list">
+          <button class="md3-segmented-btn" data-theme-set="light" data-i18n="modules.settings.theme.light"></button>
+          <button class="md3-segmented-btn" data-theme-set="dark" data-i18n="modules.settings.theme.dark"></button>
         </div>
       </div>
 
-      <!-- 主题：DaisyUI collapse -->
-      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
-        <input type="checkbox" checked />
-        <div class="collapse-title font-medium flex items-center gap-2">
-          <i data-lucide="sun-moon" class="w-4 h-4"></i>
-          <span data-i18n="modules.settings.theme.title"></span>
+      <!-- 链接：MD3 outlined card + list items -->
+      <div class="md3-card-outlined !p-0 overflow-hidden">
+        <div class="flex items-center gap-2 px-4 pt-4">
+          <i data-lucide="external-link" class="w-5 h-5 text-primary"></i>
+          <h3 class="text-base font-medium" data-i18n="modules.settings.links.title"></h3>
         </div>
-        <div class="collapse-content">
-          <div class="btn-group join w-full mt-2" id="set-theme-list">
-            <button class="btn btn-sm join-item flex-1" data-theme-set="light" data-i18n="modules.settings.theme.light"></button>
-            <button class="btn btn-sm join-item flex-1" data-theme-set="dark" data-i18n="modules.settings.theme.dark"></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 链接：DaisyUI menu -->
-      <div class="card bg-base-100 border border-base-300">
-        <div class="card-body p-0">
-          <div class="card-title text-base gap-2 px-4 pt-4">
-            <i data-lucide="external-link" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.links.title"></span>
-          </div>
-          <ul class="menu menu-sm w-full p-2 mt-2">
-            <li>
-              <a data-link="${REPO_URL}" class="gap-2">
-                <i data-lucide="star" class="w-4 h-4"></i>
-                <span data-i18n="modules.settings.links.repo"></span>
-              </a>
-            </li>
-            <li>
-              <a data-link="${ISSUES_URL}" class="gap-2">
-                <i data-lucide="message-circle" class="w-4 h-4"></i>
-                <span data-i18n="modules.settings.links.issues"></span>
-              </a>
-            </li>
-            <li>
-              <a data-link="${WEB_URL}" class="gap-2">
-                <i data-lucide="globe" class="w-4 h-4"></i>
-                <span data-i18n="modules.settings.links.web"></span>
-              </a>
-            </li>
-          </ul>
+        <div class="mt-2" id="set-links">
+          <a class="md3-list-item" data-link="${REPO_URL}">
+            <i data-lucide="star" class="w-5 h-5 text-base-content/60 flex-none"></i>
+            <span class="flex-1" data-i18n="modules.settings.links.repo"></span>
+            <i data-lucide="arrow-up-circle" class="w-4 h-4 text-base-content/40"></i>
+          </a>
+          <div class="h-px bg-base-300 mx-4"></div>
+          <a class="md3-list-item" data-link="${ISSUES_URL}">
+            <i data-lucide="message-circle" class="w-5 h-5 text-base-content/60 flex-none"></i>
+            <span class="flex-1" data-i18n="modules.settings.links.issues"></span>
+            <i data-lucide="arrow-up-circle" class="w-4 h-4 text-base-content/40"></i>
+          </a>
+          <div class="h-px bg-base-300 mx-4"></div>
+          <a class="md3-list-item" data-link="${WEB_URL}">
+            <i data-lucide="globe" class="w-5 h-5 text-base-content/60 flex-none"></i>
+            <span class="flex-1" data-i18n="modules.settings.links.web"></span>
+            <i data-lucide="arrow-up-circle" class="w-4 h-4 text-base-content/40"></i>
+          </a>
         </div>
       </div>
 
-      <!-- 关于 + 更新：DaisyUI card + table + progress -->
-      <div class="card bg-base-100 border border-base-300">
-        <div class="card-body gap-4">
-          <h3 class="card-title text-base gap-2">
-            <i data-lucide="info" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.about.title"></span>
-          </h3>
-          <div class="overflow-x-auto">
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td class="opacity-70" data-i18n="modules.settings.about.version"></td>
-                  <td class="text-right font-mono" id="set-version">0.0.0</td>
-                </tr>
-                <tr>
-                  <td class="opacity-70" data-i18n="modules.settings.about.platform"></td>
-                  <td class="text-right font-mono" id="set-platform"></td>
-                </tr>
-              </tbody>
-            </table>
+      <!-- 关于 + 更新：MD3 outlined card -->
+      <div class="md3-card-outlined space-y-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="info" class="w-5 h-5 text-primary"></i>
+          <h3 class="text-base font-medium" data-i18n="modules.settings.about.title"></h3>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-base-content/60" data-i18n="modules.settings.about.version"></span>
+            <span class="font-mono" id="set-version">0.0.0</span>
           </div>
-
-          <div class="divider my-0"></div>
-
-          <div id="set-update-area" class="space-y-3">
-            <button id="set-check-btn" class="btn btn-primary btn-sm w-full gap-2">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.update.check"></span>
-            </button>
-            <div id="set-update-status" class="text-sm"></div>
-            <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-            <button id="set-install-btn" class="btn btn-success btn-sm w-full gap-2 hidden">
-              <i data-lucide="download" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.update.install"></span>
-            </button>
+          <div class="flex justify-between">
+            <span class="text-base-content/60" data-i18n="modules.settings.about.platform"></span>
+            <span class="font-mono" id="set-platform"></span>
           </div>
+        </div>
+
+        <div class="h-px bg-base-300"></div>
+
+        <div id="set-update-area" class="space-y-3">
+          <button id="set-check-btn" class="md3-btn-filled w-full gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span data-i18n="modules.settings.update.check"></span>
+          </button>
+          <div id="set-update-status" class="text-sm"></div>
+          <div id="set-progress" class="md3-progress hidden">
+            <div class="md3-progress-bar" id="set-progress-bar" style="width:0%"></div>
+          </div>
+          <button id="set-install-btn" class="md3-btn-tonal w-full gap-2 hidden">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span data-i18n="modules.settings.update.install"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -158,7 +140,8 @@ export function createUi(container: HTMLElement): SettingsUi {
   const platformEl = qs<HTMLElement>(container, "#set-platform");
   const checkBtn = qs<HTMLButtonElement>(container, "#set-check-btn");
   const statusBox = qs<HTMLElement>(container, "#set-update-status");
-  const progressBar = qs<HTMLProgressElement>(container, "#set-progress");
+  const progressBar = qs<HTMLElement>(container, "#set-progress");
+  const progressBarBar = qs<HTMLElement>(container, "#set-progress-bar");
   const installBtn = qs<HTMLButtonElement>(container, "#set-install-btn");
 
   function refresh(): void {
@@ -182,7 +165,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getLocale();
     localeList.innerHTML = LOCALE_OPTIONS.map(
       (o) =>
-        `<button class="btn btn-sm join-item flex-1 ${o.code === current ? "btn-active" : "btn-ghost"}" data-locale="${o.code}">${o.label}</button>`,
+        `<button class="md3-segmented-btn ${o.code === current ? "active" : ""}" data-locale="${o.code}">${o.label}</button>`,
     ).join("");
   }
 
@@ -192,8 +175,7 @@ export function createUi(container: HTMLElement): SettingsUi {
       .querySelectorAll<HTMLButtonElement>("[data-theme-set]")
       .forEach((btn) => {
         const theme = btn.dataset.themeSet as "light" | "dark";
-        btn.classList.toggle("btn-active", theme === current);
-        btn.classList.toggle("btn-ghost", theme !== current);
+        btn.classList.toggle("active", theme === current);
       });
   }
 
@@ -234,9 +216,9 @@ export function createUi(container: HTMLElement): SettingsUi {
               <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
               <span>${escapeHtml(t("modules.settings.update.available", { version: ver }))}</span>
             </div>
-            ${date ? `<div class="text-xs opacity-50">${escapeHtml(date)}</div>` : ""}
-            ${notes ? `<div class="text-xs whitespace-pre-line opacity-70 mt-1 max-h-32 overflow-y-auto">${escapeHtml(notes)}</div>` : ""}
-            ${platform === "android" ? `<div class="text-xs opacity-60 mt-1">${escapeHtml(t("modules.settings.update.android-hint"))}</div>` : ""}
+            ${date ? `<div class="text-xs text-base-content/50">${escapeHtml(date)}</div>` : ""}
+            ${notes ? `<div class="text-xs whitespace-pre-line text-base-content/70 mt-1 max-h-32 overflow-y-auto">${escapeHtml(notes)}</div>` : ""}
+            ${platform === "android" ? `<div class="text-xs text-base-content/60 mt-1">${escapeHtml(t("modules.settings.update.android-hint"))}</div>` : ""}
           </div>
         `;
         checkBtn.disabled = false;
@@ -247,7 +229,7 @@ export function createUi(container: HTMLElement): SettingsUi {
         const pct = s.total > 0 ? Math.min(100, Math.round((s.progress / s.total) * 100)) : 0;
         statusBox.innerHTML = `<span class="flex items-center gap-2"><span class="loading loading-spinner loading-xs"></span>${escapeHtml(t("modules.settings.update.downloading", { percent: String(pct) }))}</span>`;
         progressBar.classList.remove("hidden");
-        progressBar.value = pct;
+        progressBarBar.style.width = `${pct}%`;
         checkBtn.disabled = true;
         break;
       }
