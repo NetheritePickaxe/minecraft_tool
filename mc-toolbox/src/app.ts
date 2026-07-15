@@ -1,17 +1,31 @@
-// 应用框架：侧边栏 + 内容区 + 模块路由
-// - 侧边栏：模块菜单（点击切换）+ 语言切换 + 主题切换
-// - 内容区：挂载当前激活模块
-// - 所有可见文本走 t()，语言切换时刷新侧边栏
+// 应用框架：卡片墙主页 + 工具详情页
+// - 主页：响应式 grid，每个已注册模块一张工具卡片（图标 + 名称 + 简介）
+// - 详情页：顶部返回栏 + 内容区挂载模块
+// - 全局顶部 bar：应用标题 + 语言切换 + 主题切换
 
-import { declareModule, loadAllModules, activateModule } from "./core/module-loader";
+import {
+  createIcons,
+  ArrowLeft,
+  ArrowRight,
+  Languages,
+  SatelliteDish,
+  SunMoon,
+  Wrench,
+} from "lucide";
+import {
+  declareModule,
+  loadAllModules,
+  activateModule,
+  deactivateActive,
+} from "./core/module-loader";
 import { t, getLocale, setLocale, onLocaleChange, initLocale } from "./lang";
 import type { LocaleCode } from "./lang";
+import type { ModuleRegistration } from "./core/types";
 
-// 声明所有模块（懒加载，按声明顺序展示在侧边栏）
+// 声明所有模块（懒加载，按声明顺序展示在卡片墙）
 declareModule(() => import("./modules/server-motd"));
 
 const THEME_KEY = "mc-toolbox.theme";
-
 type Theme = "light" | "dark";
 
 function resolveInitialTheme(): Theme {
@@ -27,6 +41,22 @@ function applyTheme(theme: Theme): void {
   localStorage.setItem(THEME_KEY, theme);
 }
 
+const LOCALE_OPTIONS: Array<{ code: LocaleCode; label: string }> = [
+  { code: "zh_cn", label: "简体中文" },
+  { code: "en_us", label: "English" },
+];
+
+// 按需导入用到的图标（框架级 + 各模块）。
+// createIcons 会把 data-lucide 的 kebab-case 自动转 PascalCase 匹配此映射。
+const ICONS = {
+  ArrowLeft,
+  ArrowRight,
+  Languages,
+  SatelliteDish,
+  SunMoon,
+  Wrench,
+};
+
 /** 构建应用骨架并挂载到 #app */
 export async function mountApp(root: HTMLElement): Promise<void> {
   initLocale();
@@ -35,57 +65,106 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const modules = await loadAllModules();
 
   root.innerHTML = `
-    <div class="drawer lg:drawer-open h-full">
-      <input id="app-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-side z-20">
-        <label for="app-drawer" class="drawer-overlay"></label>
-        <aside class="min-h-full w-64 bg-base-200 flex flex-col">
-          <div class="p-4 border-b border-base-300">
-            <h1 class="text-lg font-bold" data-i18n="app.title"></h1>
-            <p class="text-xs opacity-60" data-i18n="app.tagline"></p>
-          </div>
-          <nav id="module-nav" class="flex-1 menu menu-md gap-1 p-2"></nav>
-          <div class="p-3 border-t border-base-300 flex items-center gap-2">
-            <div class="dropdown dropdown-top">
-              <div tabindex="0" role="button" class="btn btn-sm btn-ghost" id="locale-btn">
-                <span id="locale-label"></span>
-              </div>
-              <ul id="locale-menu" class="dropdown-content menu bg-base-100 rounded-box z-30 w-32 p-2 shadow" tabindex="0"></ul>
-            </div>
-            <button id="theme-btn" class="btn btn-sm btn-ghost ml-auto" aria-label="toggle theme"></button>
-          </div>
-        </aside>
-      </div>
-      <div class="drawer-content flex flex-col">
-        <div class="lg:hidden p-2 border-b border-base-300">
-          <label for="app-drawer" class="btn btn-sm btn-ghost" data-i18n="app.title"></label>
+    <div class="min-h-full flex flex-col">
+      <header class="navbar bg-base-100 shadow-sm sticky top-0 z-30 px-4 gap-2">
+        <div class="flex-1">
+          <h1 class="text-lg font-bold" data-i18n="app.title"></h1>
         </div>
-        <main id="module-container" class="flex-1 overflow-auto p-4"></main>
-      </div>
+        <div class="flex-none gap-1">
+          <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-sm btn-ghost gap-1" id="locale-btn">
+              <i data-lucide="languages" class="w-4 h-4"></i>
+              <span id="locale-label"></span>
+            </div>
+            <ul id="locale-menu" class="dropdown-content menu bg-base-100 rounded-box z-40 w-36 p-2 shadow border border-base-300"></ul>
+          </div>
+          <button id="theme-btn" class="btn btn-sm btn-ghost" aria-label="toggle theme">
+            <i data-lucide="sun-moon" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="flex-1">
+        <!-- 卡片墙主页 -->
+        <section id="home-view" class="p-4 sm:p-6">
+          <div class="max-w-6xl mx-auto">
+            <div class="mb-6">
+              <h2 class="text-2xl font-bold" data-i18n="app.home"></h2>
+              <p class="text-sm opacity-60 mt-1" data-i18n="app.tagline"></p>
+            </div>
+            <div id="tool-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+            <div id="empty-hint" class="hidden text-center py-20 opacity-50">
+              <p data-i18n="app.empty"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 工具详情页 -->
+        <section id="detail-view" class="hidden">
+          <div class="sticky top-16 z-20 bg-base-100/80 backdrop-blur border-b border-base-300 px-4 py-2">
+            <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span data-i18n="app.back"></span>
+            </button>
+            <span id="detail-title" class="font-semibold ml-2"></span>
+          </div>
+          <div id="module-container" class="p-4 sm:p-6"></div>
+        </section>
+      </main>
     </div>
   `;
 
-  const nav = root.querySelector<HTMLElement>("#module-nav")!;
-  const container = root.querySelector<HTMLElement>("#module-container")!;
-  const localeLabel = root.querySelector<HTMLElement>("#locale-label")!;
-  const localeMenu = root.querySelector<HTMLElement>("#locale-menu")!;
-  const themeBtn = root.querySelector<HTMLButtonElement>("#theme-btn")!;
+  const homeView = qs<HTMLElement>(root, "#home-view");
+  const detailView = qs<HTMLElement>(root, "#detail-view");
+  const toolGrid = qs<HTMLElement>(root, "#tool-grid");
+  const emptyHint = qs<HTMLElement>(root, "#empty-hint");
+  const container = qs<HTMLElement>(root, "#module-container");
+  const detailTitle = qs<HTMLElement>(root, "#detail-title");
+  const backBtn = qs<HTMLButtonElement>(root, "#back-btn");
+  const localeLabel = qs<HTMLElement>(root, "#locale-label");
+  const localeMenu = qs<HTMLElement>(root, "#locale-menu");
+  const themeBtn = qs<HTMLButtonElement>(root, "#theme-btn");
 
-  // 渲染侧边栏模块菜单
-  function renderNav(): void {
-    nav.innerHTML = modules
+  let activeModuleId: string | null = null;
+
+  // 渲染工具卡片墙
+  function renderToolGrid(): void {
+    if (modules.length === 0) {
+      emptyHint.classList.remove("hidden");
+      toolGrid.classList.add("hidden");
+      return;
+    }
+    emptyHint.classList.add("hidden");
+    toolGrid.classList.remove("hidden");
+    toolGrid.innerHTML = modules
       .map(
-        (m) =>
-          `<li><button class="module-link btn btn-ghost btn-sm w-full justify-start" data-module-id="${m.id}">${t(m.nameKey)}</button></li>`,
+        (m) => `
+          <button class="tool-card card bg-base-100 shadow-md hover:shadow-xl border border-base-200 hover:border-primary transition-all duration-200 hover:-translate-y-1 cursor-pointer text-left group" data-module-id="${m.id}">
+            <div class="card-body p-5 gap-3">
+              <div class="flex items-start gap-3">
+                <div class="flex-none w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-content transition-colors">
+                  <i data-lucide="${m.icon ?? "wrench"}" class="w-6 h-6"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-semibold text-base truncate">${t(m.nameKey)}</h3>
+                  <p class="text-xs opacity-60 mt-1 line-clamp-2">${
+                    m.descriptionKey ? t(m.descriptionKey) : ""
+                  }</p>
+                </div>
+              </div>
+              <div class="flex justify-end items-center text-xs opacity-40 group-hover:opacity-100 group-hover:text-primary transition">
+                <span data-i18n="app.open"></span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+              </div>
+            </div>
+          </button>
+        `,
       )
       .join("");
+    refreshIcons();
   }
 
   // 渲染语言下拉
-  const LOCALE_OPTIONS: Array<{ code: LocaleCode; label: string }> = [
-    { code: "zh_cn", label: "简体中文" },
-    { code: "en_us", label: "English" },
-  ];
   function renderLocale(): void {
     const current = getLocale();
     localeLabel.textContent =
@@ -96,52 +175,63 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     ).join("");
   }
 
-  // 主题按钮文本
-  function renderThemeBtn(): void {
-    themeBtn.textContent =
-      document.documentElement.getAttribute("data-theme") === "dark"
-        ? "🌙"
-        : "☀️";
-  }
-
-  // 刷新所有静态 i18n 文本
+  // 刷新所有静态 i18n 文本与图标
   function refreshStaticText(): void {
     root.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       el.textContent = t(el.dataset.i18n!);
     });
+    if (activeModuleId) {
+      const m = modules.find((x) => x.id === activeModuleId);
+      if (m) detailTitle.textContent = t(m.nameKey);
+    }
   }
 
-  renderNav();
+  function refreshIcons(): void {
+    createIcons({ icons: ICONS, attrs: { "stroke-width": 2 } });
+  }
+
+  // 进入工具详情页
+  function enterModule(m: ModuleRegistration): void {
+    activeModuleId = m.id;
+    detailTitle.textContent = t(m.nameKey);
+    homeView.classList.add("hidden");
+    detailView.classList.remove("hidden");
+    activateModule(m.id, container);
+    window.scrollTo({ top: 0 });
+  }
+
+  // 返回卡片墙
+  function backToHome(): void {
+    deactivateActive();
+    activeModuleId = null;
+    detailView.classList.add("hidden");
+    homeView.classList.remove("hidden");
+    window.scrollTo({ top: 0 });
+  }
+
+  // 初始渲染
+  renderToolGrid();
   renderLocale();
-  renderThemeBtn();
   refreshStaticText();
+  refreshIcons();
 
-  // 默认激活第一个模块
-  if (modules.length > 0) {
-    activateModule(modules[0].id, container);
-    markActive(modules[0].id);
-  }
-
-  // 模块切换
-  nav.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".module-link");
-    if (!btn) return;
-    const id = btn.dataset.moduleId!;
-    activateModule(id, container);
-    markActive(id);
-    // 移动端：切换后收起抽屉
-    (root.querySelector("#app-drawer") as HTMLInputElement).checked = false;
+  // 卡片点击进入详情
+  toolGrid.addEventListener("click", (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>(".tool-card");
+    if (!card) return;
+    const id = card.dataset.moduleId!;
+    const m = modules.find((x) => x.id === id);
+    if (m) enterModule(m);
   });
 
-  function markActive(id: string): void {
-    nav.querySelectorAll<HTMLElement>(".module-link").forEach((btn) => {
-      btn.classList.toggle("btn-active", btn.dataset.moduleId === id);
-    });
-  }
+  // 返回按钮
+  backBtn.addEventListener("click", backToHome);
 
   // 语言切换
   localeMenu.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".locale-option");
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+      ".locale-option",
+    );
     if (!btn) return;
     setLocale(btn.dataset.locale as LocaleCode);
   });
@@ -153,19 +243,18 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         ? "light"
         : "dark";
     applyTheme(next);
-    renderThemeBtn();
   });
 
-  // 语言变化时刷新静态文本与侧边栏
+  // 语言变化时刷新所有文本与卡片
   onLocaleChange(() => {
     refreshStaticText();
-    renderNav();
+    renderToolGrid();
     renderLocale();
-    markActive(getActiveModuleId());
   });
+}
 
-  function getActiveModuleId(): string {
-    const active = nav.querySelector<HTMLElement>(".module-link.btn-active");
-    return active?.dataset.moduleId ?? modules[0]?.id ?? "";
-  }
+function qs<T extends HTMLElement>(parent: ParentNode, sel: string): T {
+  const el = parent.querySelector<T>(sel);
+  if (!el) throw new Error(`element not found: ${sel}`);
+  return el;
 }

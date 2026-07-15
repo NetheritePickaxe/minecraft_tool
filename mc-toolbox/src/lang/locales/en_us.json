@@ -1,6 +1,10 @@
 {
   "app.title": "MC Toolbox",
   "app.tagline": "A toolkit for Minecraft players",
+  "app.home": "Toolbox",
+  "app.back": "Back",
+  "app.open": "Open",
+  "app.empty": "No tools available",
   "common.confirm": "OK",
   "common.cancel": "Cancel",
   "common.retry": "Retry",

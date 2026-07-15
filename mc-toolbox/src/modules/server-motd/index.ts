@@ -11,6 +11,8 @@ export function register(): ModuleRegistration {
   return {
     id: "server-motd",
     nameKey: "modules.server-motd.name",
+    descriptionKey: "modules.server-motd.description",
+    icon: "satellite-dish",
     mount(container) {
       currentUi = createUi(container);
     },

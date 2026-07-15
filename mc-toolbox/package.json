@@ -12,7 +12,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2"
+    "@tauri-apps/api": "^2",
+    "lucide": "^1.24.0"
   },
   "devDependencies": {
     "@eslint/js": "^9",

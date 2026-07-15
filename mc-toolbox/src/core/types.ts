@@ -4,9 +4,13 @@
 export interface ModuleRegistration {
   /** 唯一标识，与目录名一致 */
   id: string;
-  /** i18n 键，用于侧边栏/菜单显示模块名 */
+  /** i18n 键，用于卡片标题与详情页标题 */
   nameKey: string;
-  /** 挂载到宿主容器（内容区） */
+  /** i18n 键，用于卡片副标题/简介（可选） */
+  descriptionKey?: string;
+  /** lucide 图标名（kebab-case，如 "satellite-dish"），用于卡片图标（可选） */
+  icon?: string;
+  /** 挂载到宿主容器（详情页内容区） */
   mount(container: HTMLElement): void;
   /** 可选：卸载时清理（移除监听、定时器等） */
   unmount?(): void;
