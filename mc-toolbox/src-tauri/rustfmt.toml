@@ -1,0 +1,11 @@
+# Rust 代码格式化配置
+# `cargo fmt --check` 在 CI 中按此配置检查格式
+
+# 缩进 4 空格（Rust 默认）
+tab_spaces = 4
+
+# 单行最大宽度（默认 100）
+max_width = 100
+
+# 末尾换行
+newline_style = "Unix"

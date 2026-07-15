@@ -1,0 +1,77 @@
+name: Lint
+
+# 代码静态检查：前端 ESLint + Rust fmt/clippy
+# - PR / push main：必须通过才能合并
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 项目位于 mc-toolbox 子目录
+defaults:
+  run:
+    working-directory: mc-toolbox
+
+# 同一分支新 push 取消旧 lint
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============ 前端 ESLint ============
+  eslint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mc-toolbox/package-lock.json
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+  # ============ Rust 格式检查 ============
+  rust-fmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: cargo fmt --check
+        working-directory: mc-toolbox/src-tauri
+        run: cargo fmt --check
+
+  # ============ Rust Clippy 代码检查 ============
+  rust-clippy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # clippy 需要解析依赖，先 fetch（不编译）
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mc-toolbox/src-tauri
+
+      # -D warnings: warning 当作 error，保证代码质量
+      # --all-targets: 检查所有目标（含 tests/benches）
+      # 注意：桌面端 clippy 在 ubuntu-latest 可正常编译，
+      # Android target 的 clippy 需 NDK，这里不覆盖（由 build job 保证）
+      - name: cargo clippy
+        working-directory: mc-toolbox/src-tauri
+        run: cargo clippy --all-targets -- -D warnings
