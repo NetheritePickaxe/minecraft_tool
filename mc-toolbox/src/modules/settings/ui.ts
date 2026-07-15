@@ -3,7 +3,25 @@
 
 import { t, onLocaleChange, setLocale, getLocale } from "../../lang";
 import type { LocaleCode } from "../../lang";
-import { applyTheme, getTheme, onThemeChange } from "../../core/theme";
+import {
+  applyMode,
+  applyColorScheme,
+  getMode,
+  getColorScheme,
+  onThemeChange,
+  COLOR_SCHEMES,
+  type ColorScheme,
+} from "../../core/theme";
+
+// 色系预览主色（取 light 变体的 primary，用于色板圆点）
+const SCHEME_COLORS: Record<ColorScheme, string> = {
+  grass: "#5a9216",
+  diamond: "#17a2b8",
+  nether: "#7c3aed",
+  redstone: "#dc2626",
+  gold: "#d97706",
+  end: "#1f2937",
+};
 import {
   detectPlatform,
   getAppVersion,
@@ -69,9 +87,18 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span data-i18n="modules.settings.theme.title"></span>
         </div>
         <div class="collapse-content">
-          <div class="join w-full mt-2" id="set-theme-list">
-            <button class="btn btn-sm join-item flex-1" data-theme-set="light" data-i18n="modules.settings.theme.light"></button>
-            <button class="btn btn-sm join-item flex-1" data-theme-set="dark" data-i18n="modules.settings.theme.dark"></button>
+          <!-- 明暗模式 -->
+          <div class="mt-2">
+            <div class="text-xs opacity-60 mb-1" data-i18n="modules.settings.theme.mode"></div>
+            <div class="join w-full" id="set-mode-list">
+              <button class="btn btn-sm join-item flex-1" data-mode-set="light" data-i18n="modules.settings.theme.light"></button>
+              <button class="btn btn-sm join-item flex-1" data-mode-set="dark" data-i18n="modules.settings.theme.dark"></button>
+            </div>
+          </div>
+          <!-- 配色 -->
+          <div class="mt-3">
+            <div class="text-xs opacity-60 mb-1" data-i18n="modules.settings.theme.color-scheme"></div>
+            <div class="grid grid-cols-3 gap-2" id="set-scheme-list"></div>
           </div>
         </div>
       </div>
@@ -148,6 +175,7 @@ export function createUi(container: HTMLElement): SettingsUi {
   `;
 
   const localeList = qs<HTMLElement>(container, "#set-locale-list");
+  const schemeList = qs<HTMLElement>(container, "#set-scheme-list");
   const versionEl = qs<HTMLElement>(container, "#set-version");
   const platformEl = qs<HTMLElement>(container, "#set-platform");
   const checkBtn = qs<HTMLButtonElement>(container, "#set-check-btn");
@@ -160,7 +188,8 @@ export function createUi(container: HTMLElement): SettingsUi {
       el.textContent = t(el.dataset.i18n!);
     });
     renderLocaleList();
-    renderThemeButtons();
+    renderModeButtons();
+    renderSchemeButtons();
     platformEl.textContent = platformLabel(platform);
     versionEl.textContent = version;
     renderUpdateStatus();
@@ -180,15 +209,31 @@ export function createUi(container: HTMLElement): SettingsUi {
     ).join("");
   }
 
-  function renderThemeButtons(): void {
-    const current = getTheme();
+  function renderModeButtons(): void {
+    const current = getMode();
     container
-      .querySelectorAll<HTMLButtonElement>("[data-theme-set]")
+      .querySelectorAll<HTMLButtonElement>("[data-mode-set]")
       .forEach((btn) => {
-        const theme = btn.dataset.themeSet as "light" | "dark";
-        btn.classList.toggle("btn-active", theme === current);
-        btn.classList.toggle("btn-primary", theme === current);
+        const mode = btn.dataset.modeSet as "light" | "dark";
+        btn.classList.toggle("btn-active", mode === current);
+        btn.classList.toggle("btn-primary", mode === current);
       });
+  }
+
+  function renderSchemeButtons(): void {
+    const current = getColorScheme();
+    schemeList.innerHTML = COLOR_SCHEMES.map(
+      (s) =>
+        `<button class="btn btn-sm flex-col gap-1 h-auto py-2 ${s === current ? "btn-primary" : "btn-ghost bg-base-200"}" data-scheme-set="${s}">
+          <span class="w-4 h-4 rounded-full ring-1 ring-black/10" style="background:${SCHEME_COLORS[s]}"></span>
+          <span class="text-[11px]" data-i18n="modules.settings.theme.scheme.${s}"></span>
+        </button>`,
+    ).join("");
+    // 色系按钮内的 i18n 文本需要立即填充（renderSchemeButtons 在 refresh 时被调用，
+    // 但 innerHTML 重写后 data-i18n 节点是新建的，refresh 的 querySelectorAll 已执行过）
+    schemeList.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+      el.textContent = t(el.dataset.i18n!);
+    });
   }
 
   function renderUpdateStatus(): void {
@@ -280,13 +325,23 @@ export function createUi(container: HTMLElement): SettingsUi {
     setLocale(btn.dataset.locale as LocaleCode);
   });
 
+  // 明暗模式按钮（静态节点，直接绑定）
   container
-    .querySelectorAll<HTMLButtonElement>("[data-theme-set]")
+    .querySelectorAll<HTMLButtonElement>("[data-mode-set]")
     .forEach((btn) => {
       btn.addEventListener("click", () => {
-        applyTheme(btn.dataset.themeSet as "light" | "dark");
+        applyMode(btn.dataset.modeSet as "light" | "dark");
       });
     });
+
+  // 色系按钮（动态渲染，用事件委托）
+  schemeList.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+      "[data-scheme-set]",
+    );
+    if (!btn) return;
+    applyColorScheme(btn.dataset.schemeSet as ColorScheme);
+  });
 
   container.addEventListener("click", async (e) => {
     const linkBtn = (e.target as HTMLElement).closest<HTMLAnchorElement>(
@@ -403,7 +458,10 @@ export function createUi(container: HTMLElement): SettingsUi {
     }
   }
 
-  const offTheme = onThemeChange(() => renderThemeButtons());
+  const offTheme = onThemeChange(() => {
+    renderModeButtons();
+    renderSchemeButtons();
+  });
   const offLocale = onLocaleChange(() => refresh());
 
   void loadVersion();

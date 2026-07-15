@@ -31,9 +31,8 @@ import { t, getLocale, setLocale, onLocaleChange, initLocale } from "./lang";
 import type { LocaleCode } from "./lang";
 import type { ModuleRegistration } from "./core/types";
 import {
-  applyTheme,
-  resolveInitialTheme,
-  toggleTheme,
+  resolveAndApply,
+  toggleMode,
   onThemeChange,
 } from "./core/theme";
 
@@ -70,7 +69,7 @@ type NavTab = "home" | "settings";
 /** 构建应用骨架并挂载到 #app */
 export async function mountApp(root: HTMLElement): Promise<void> {
   initLocale();
-  applyTheme(resolveInitialTheme());
+  resolveAndApply();
 
   const modules = await loadAllModules();
   const tools = modules.filter((m) => !m.system);
@@ -276,7 +275,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   });
 
   themeBtn.addEventListener("click", () => {
-    toggleTheme();
+    toggleMode();
   });
 
   container.addEventListener("settings:icons-stale", () => {
