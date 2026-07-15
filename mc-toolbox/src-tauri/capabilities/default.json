@@ -4,6 +4,15 @@
   "description": "Capability for the main window",
   "windows": ["main"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "updater:default",
+    {
+      "identifier": "shell:allow-open",
+      "allow": [
+        { "url": "https://github.com/**" },
+        { "url": "https://objects.githubusercontent.com/**" },
+        { "url": "https://netheritepickaxe.github.io/**" }
+      ]
+    }
   ]
 }

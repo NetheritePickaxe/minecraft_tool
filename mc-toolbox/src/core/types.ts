@@ -10,6 +10,11 @@ export interface ModuleRegistration {
   descriptionKey?: string;
   /** lucide 图标名（kebab-case，如 "satellite-dish"），用于卡片图标（可选） */
   icon?: string;
+  /**
+   * 系统模块标记（可选）。
+   * 系统模块不显示在卡片墙主页，仅通过特殊入口（如底边栏）进入。
+   */
+  system?: boolean;
   /** 挂载到宿主容器（详情页内容区） */
   mount(container: HTMLElement): void;
   /** 可选：卸载时清理（移除监听、定时器等） */

@@ -1,14 +1,27 @@
-// 应用框架：卡片墙主页 + 工具详情页
-// - 主页：响应式 grid，每个已注册模块一张工具卡片（图标 + 名称 + 简介）
+// 应用框架：卡片墙主页 + 工具详情页 + 底边栏
+// - 主页：响应式 grid，每个非系统模块一张工具卡片（图标 + 名称 + 简介）
 // - 详情页：顶部返回栏 + 内容区挂载模块
 // - 全局顶部 bar：应用标题 + 语言切换 + 主题切换
+// - 底边栏：版权 + 设置入口（系统模块）
+// - 系统模块（如 settings）不显示在卡片墙，仅通过底边栏入口进入
 
 import {
   createIcons,
   ArrowLeft,
   ArrowRight,
+  ArrowUpCircle,
+  AlertCircle,
+  CheckCircle,
+  Download,
+  ExternalLink,
+  Globe,
+  Info,
   Languages,
+  MessageCircle,
+  RefreshCw,
   SatelliteDish,
+  Settings,
+  Star,
   SunMoon,
   Wrench,
 } from "lucide";
@@ -21,25 +34,16 @@ import {
 import { t, getLocale, setLocale, onLocaleChange, initLocale } from "./lang";
 import type { LocaleCode } from "./lang";
 import type { ModuleRegistration } from "./core/types";
+import {
+  applyTheme,
+  resolveInitialTheme,
+  toggleTheme,
+  onThemeChange,
+} from "./core/theme";
 
-// 声明所有模块（懒加载，按声明顺序展示在卡片墙）
+// 声明所有模块（懒加载，按声明顺序展示在卡片墙；system 模块不会出现在卡片墙）
 declareModule(() => import("./modules/server-motd"));
-
-const THEME_KEY = "mc-toolbox.theme";
-type Theme = "light" | "dark";
-
-function resolveInitialTheme(): Theme {
-  const saved = localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") return saved;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
-function applyTheme(theme: Theme): void {
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_KEY, theme);
-}
+declareModule(() => import("./modules/settings"));
 
 const LOCALE_OPTIONS: Array<{ code: LocaleCode; label: string }> = [
   { code: "zh_cn", label: "简体中文" },
@@ -49,10 +53,21 @@ const LOCALE_OPTIONS: Array<{ code: LocaleCode; label: string }> = [
 // 按需导入用到的图标（框架级 + 各模块）。
 // createIcons 会把 data-lucide 的 kebab-case 自动转 PascalCase 匹配此映射。
 const ICONS = {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
+  ArrowUpCircle,
+  CheckCircle,
+  Download,
+  ExternalLink,
+  Globe,
+  Info,
   Languages,
+  MessageCircle,
+  RefreshCw,
   SatelliteDish,
+  Settings,
+  Star,
   SunMoon,
   Wrench,
 };
@@ -63,6 +78,9 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   applyTheme(resolveInitialTheme());
 
   const modules = await loadAllModules();
+  // 卡片墙只显示非系统模块
+  const tools = modules.filter((m) => !m.system);
+  const settingsModule = modules.find((m) => m.system && m.id === "settings");
 
   root.innerHTML = `
     <div class="min-h-full flex flex-col">
@@ -86,7 +104,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
       <main class="flex-1">
         <!-- 卡片墙主页 -->
-        <section id="home-view" class="p-4 sm:p-6">
+        <section id="home-view" class="p-4 sm:p-6 pb-16">
           <div class="max-w-6xl mx-auto">
             <div class="mb-6">
               <h2 class="text-2xl font-bold" data-i18n="app.home"></h2>
@@ -100,7 +118,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
 
         <!-- 工具详情页 -->
-        <section id="detail-view" class="hidden">
+        <section id="detail-view" class="hidden pb-16">
           <div class="sticky top-16 z-20 bg-base-100/80 backdrop-blur border-b border-base-300 px-4 py-2">
             <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
               <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -111,6 +129,19 @@ export async function mountApp(root: HTMLElement): Promise<void> {
           <div id="module-container" class="p-4 sm:p-6"></div>
         </section>
       </main>
+
+      <!-- 底边栏：版权 + 设置入口（三端都显示） -->
+      <footer class="bg-base-100 border-t border-base-300 px-4 py-2 flex items-center justify-between sticky bottom-0 z-30">
+        <div class="text-xs opacity-60 flex items-center gap-1">
+          <span>© 2025 MC Toolbox</span>
+        </div>
+        <button id="settings-btn" class="btn btn-sm btn-ghost gap-1" ${
+          settingsModule ? "" : "disabled"
+        }>
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span data-i18n="app.settings"></span>
+        </button>
+      </footer>
     </div>
   `;
 
@@ -124,19 +155,20 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const localeLabel = qs<HTMLElement>(root, "#locale-label");
   const localeMenu = qs<HTMLElement>(root, "#locale-menu");
   const themeBtn = qs<HTMLButtonElement>(root, "#theme-btn");
+  const settingsBtn = qs<HTMLButtonElement>(root, "#settings-btn");
 
   let activeModuleId: string | null = null;
 
-  // 渲染工具卡片墙
+  // 渲染工具卡片墙（过滤掉 system 模块）
   function renderToolGrid(): void {
-    if (modules.length === 0) {
+    if (tools.length === 0) {
       emptyHint.classList.remove("hidden");
       toolGrid.classList.add("hidden");
       return;
     }
     emptyHint.classList.add("hidden");
     toolGrid.classList.remove("hidden");
-    toolGrid.innerHTML = modules
+    toolGrid.innerHTML = tools
       .map(
         (m) => `
           <button class="tool-card card bg-base-100 shadow-md hover:shadow-xl border border-base-200 hover:border-primary transition-all duration-200 hover:-translate-y-1 cursor-pointer text-left group" data-module-id="${m.id}">
@@ -220,12 +252,17 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     const card = (e.target as HTMLElement).closest<HTMLElement>(".tool-card");
     if (!card) return;
     const id = card.dataset.moduleId!;
-    const m = modules.find((x) => x.id === id);
+    const m = tools.find((x) => x.id === id);
     if (m) enterModule(m);
   });
 
   // 返回按钮
   backBtn.addEventListener("click", backToHome);
+
+  // 底边栏设置入口
+  settingsBtn.addEventListener("click", () => {
+    if (settingsModule) enterModule(settingsModule);
+  });
 
   // 语言切换
   localeMenu.addEventListener("click", (e) => {
@@ -238,11 +275,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   // 主题切换
   themeBtn.addEventListener("click", () => {
-    const next: Theme =
-      document.documentElement.getAttribute("data-theme") === "dark"
-        ? "light"
-        : "dark";
-    applyTheme(next);
+    toggleTheme();
+  });
+
+  // settings 内部状态变化时，图标可能被 innerHTML 替换，需要重新渲染
+  container.addEventListener("settings:icons-stale", () => {
+    refreshIcons();
   });
 
   // 语言变化时刷新所有文本与卡片
@@ -250,6 +288,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     refreshStaticText();
     renderToolGrid();
     renderLocale();
+  });
+
+  // 主题变化由 core/theme 内部处理，无需额外回调
+  // 但保留订阅以备将来扩展（如同步图标颜色）
+  onThemeChange(() => {
+    // 当前主题切换通过 data-theme 属性由 DaisyUI 自动处理
   });
 }
 

@@ -21,6 +21,13 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# shell 插件：用于打开外链 / 在浏览器中下载 APK
+tauri-plugin-shell = "2"
+
+# updater 插件仅用于桌面端（Android 不支持，需走自建流程）
+# 用 target-specific 依赖，避免 Android/iOS 编译时引入无用 crate
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
 
 # 发布构建优化体积：剥离调试符号 + LTO + 体积优先 + abort
 # Android: 每个 ABI 的 .so 从 ~100MB(debug) 降到 ~10-20MB(release)
