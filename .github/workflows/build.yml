@@ -116,7 +116,7 @@ jobs:
       # 每个 ABI 的 .so 从 ~100MB(debug) 降到 ~10-20MB(release)；
       # --split-per-abi 为每个 ABI 产出独立 APK，避免 universal 单包过大。
       - name: Build Android APK (release, split per ABI)
-        run: npm run tauri android build -- --apk --split-per-abi
+        run: npm run tauri android build -- --apk --split-per-abi --target aarch64 --target armv7 --target x86_64
 
       - name: Show APK sizes
         run: find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;

@@ -48,7 +48,7 @@ npm run tauri android dev    # 连接设备/模拟器运行
   - Android：每个 ABI 一个 `.apk`（arm64-v8a / armeabi-v7a / x86_64），release 构建，debug 签名可直接安装测试
 - **Release**：tag 触发时自动创建 GitHub Release 并附带所有产物
 
-> Android 体积优化：CI 使用 release 构建（`strip=true` + `lto=true` 剥离调试符号）+ `--split-per-abi`（每个 ABI 独立 APK），单个 APK 约 15-25MB。真机一般选 `arm64-v8a`，模拟器选 `x86_64`。
+> Android 体积优化：CI 使用 release 构建（`strip=true` + `lto=true` 剥离调试符号）+ `--split-per-abi`（每个 ABI 独立 APK），单个 APK 约 6-8MB（实测）。真机一般选 `arm64-v8a`，模拟器选 `x86_64`。
 
 ```bash
 # 发布新版本（触发 Windows + Android 构建并发布 Release）
