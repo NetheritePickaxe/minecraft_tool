@@ -127,17 +127,23 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：btm-nav -->
-      <nav class="btm-nav btm-nav-md bg-base-100 border-t border-base-300 z-30">
-        <button id="nav-home" class="active" data-nav="home">
-          <i data-lucide="home" class="w-5 h-5"></i>
-          <span class="btm-nav-label text-xs" data-i18n="app.home"></span>
-        </button>
-        <button id="nav-settings" data-nav="settings" ${settingsModule ? "" : "disabled"}>
-          <i data-lucide="settings" class="w-5 h-5"></i>
-          <span class="btm-nav-label text-xs" data-i18n="app.settings"></span>
-        </button>
-      </nav>
+      <!-- 底部导航：menu menu-horizontal（水平菜单） -->
+      <footer class="bg-base-100 border-t border-base-300 z-30 sticky bottom-0">
+        <ul class="menu menu-horizontal w-full justify-around items-center p-0 h-14">
+          <li id="nav-home" class="active" data-nav="home">
+            <a class="flex-col gap-0.5 py-1">
+              <i data-lucide="home" class="w-5 h-5"></i>
+              <span class="text-[10px]" data-i18n="app.home"></span>
+            </a>
+          </li>
+          <li id="nav-settings" data-nav="settings" ${settingsModule ? "" : "class=disabled"}>
+            <a class="flex-col gap-0.5 py-1">
+              <i data-lucide="settings" class="w-5 h-5"></i>
+              <span class="text-[10px]" data-i18n="app.settings"></span>
+            </a>
+          </li>
+        </ul>
+      </footer>
     </div>
   `;
 
@@ -151,12 +157,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const localeLabel = qs<HTMLElement>(root, "#locale-label");
   const localeMenu = qs<HTMLElement>(root, "#locale-menu");
   const themeBtn = qs<HTMLButtonElement>(root, "#theme-btn");
-  const navHome = qs<HTMLButtonElement>(root, "#nav-home");
-  const navSettings = qs<HTMLButtonElement>(root, "#nav-settings");
+  const navHome = qs<HTMLElement>(root, "#nav-home");
+  const navSettings = qs<HTMLElement>(root, "#nav-settings");
 
   let activeModuleId: string | null = null;
 
-  // 渲染工具卡片墙：顶部 icon 区 + 底部标题简介，大圆角
+  // 渲染工具卡片墙：DaisyUI card + figure(icon 区占主体) + card-body(标题+小描述)
   function renderToolGrid(): void {
     if (tools.length === 0) {
       emptyHint.classList.remove("hidden");
@@ -169,12 +175,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       .map(
         (m) => `
           <button class="card bg-base-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer text-left" data-module-id="${m.id}">
-            <div class="h-20 bg-primary/10 flex items-center justify-center">
-              <i data-lucide="${m.icon ?? "wrench"}" class="w-8 h-8 text-primary"></i>
-            </div>
-            <div class="card-body p-4 gap-1">
-              <h3 class="card-title text-sm font-semibold">${t(m.nameKey)}</h3>
-              <p class="text-xs opacity-60 line-clamp-2 leading-relaxed">${
+            <figure class="h-28 bg-primary/10 flex items-center justify-center">
+              <i data-lucide="${m.icon ?? "wrench"}" class="w-10 h-10 text-primary"></i>
+            </figure>
+            <div class="card-body p-3 gap-0.5">
+              <h3 class="card-title text-sm font-semibold leading-tight">${t(m.nameKey)}</h3>
+              <p class="text-[11px] opacity-50 line-clamp-1">${
                 m.descriptionKey ? t(m.descriptionKey) : ""
               }</p>
             </div>
