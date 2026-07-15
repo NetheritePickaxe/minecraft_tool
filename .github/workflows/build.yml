@@ -178,5 +178,6 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            artifacts/windows-artifacts/*
+            artifacts/windows-artifacts/**/*.exe
+            artifacts/windows-artifacts/**/*.msi
             artifacts/android-artifacts/*.apk
