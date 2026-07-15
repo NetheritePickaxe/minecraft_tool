@@ -110,7 +110,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
               <h2 class="text-2xl font-bold" data-i18n="app.home"></h2>
               <p class="text-sm opacity-60 mt-1" data-i18n="app.tagline"></p>
             </div>
-            <div id="tool-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+            <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
             <div id="empty-hint" class="hidden text-center py-20 opacity-50">
               <p data-i18n="app.empty"></p>
             </div>
@@ -171,23 +171,15 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     toolGrid.innerHTML = tools
       .map(
         (m) => `
-          <button class="tool-card card bg-base-100 shadow-md hover:shadow-xl border border-base-200 hover:border-primary transition-all duration-200 hover:-translate-y-1 cursor-pointer text-left group" data-module-id="${m.id}">
-            <div class="card-body p-5 gap-3">
-              <div class="flex items-start gap-3">
-                <div class="flex-none w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-content transition-colors">
-                  <i data-lucide="${m.icon ?? "wrench"}" class="w-6 h-6"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-semibold text-base truncate">${t(m.nameKey)}</h3>
-                  <p class="text-xs opacity-60 mt-1 line-clamp-2">${
-                    m.descriptionKey ? t(m.descriptionKey) : ""
-                  }</p>
-                </div>
+          <button class="tool-card card card-compact bg-base-100 border border-base-300 cursor-pointer text-left" data-module-id="${m.id}">
+            <div class="card-body gap-2 p-4">
+              <div class="flex items-center gap-3">
+                <i data-lucide="${m.icon ?? "wrench"}" class="w-6 h-6 text-primary flex-none"></i>
+                <h3 class="font-semibold text-sm truncate flex-1">${t(m.nameKey)}</h3>
               </div>
-              <div class="flex justify-end items-center text-xs opacity-40 group-hover:opacity-100 group-hover:text-primary transition">
-                <span data-i18n="app.open"></span>
-                <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
-              </div>
+              <p class="text-xs opacity-60 line-clamp-2">${
+                m.descriptionKey ? t(m.descriptionKey) : ""
+              }</p>
             </div>
           </button>
         `,
