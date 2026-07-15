@@ -1,5 +1,8 @@
 // 公共契约
 
+/** 模块分类，用于全局分类视图分组。系统模块可不声明。 */
+export type ModuleCategory = "server" | "world" | "player" | "utility";
+
 /** 模块注册信息，每个模块入口需通过 register() 返回此结构 */
 export interface ModuleRegistration {
   /** 唯一标识，与目录名一致 */
@@ -15,6 +18,8 @@ export interface ModuleRegistration {
    * 系统模块不显示在卡片墙主页，仅通过特殊入口（如底边栏）进入。
    */
   system?: boolean;
+  /** 模块分类（可选）。未声明时归入 "utility"。 */
+  category?: ModuleCategory;
   /** 挂载到宿主容器（详情页内容区） */
   mount(container: HTMLElement): void;
   /** 可选：卸载时清理（移除监听、定时器等） */

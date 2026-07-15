@@ -13,6 +13,7 @@ export function register(): ModuleRegistration {
     nameKey: "modules.server-motd.name",
     descriptionKey: "modules.server-motd.description",
     icon: "satellite-dish",
+    category: "server",
     mount(container) {
       currentUi = createUi(container);
     },
