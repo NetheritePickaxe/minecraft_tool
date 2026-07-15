@@ -5,6 +5,9 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  // 部署到 GitHub Pages 项目子路径 (https://user.github.io/<repo>/) 时，
+  // 通过环境变量 VITE_BASE=/<repo>/ 注入；桌面/Android 端保持默认 "/"。
+  base: process.env.VITE_BASE || "/",
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
