@@ -47,6 +47,26 @@ jobs:
       - name: Build (Windows)
         run: npm run tauri build
 
+      # Tauri bundler 硬编码 MSI 文件名为 {name}_{version}_{arch}_{lang}.msi，
+      # 无法通过配置去掉语言后缀。构建后重命名为 {name}_{version}_{arch}.msi。
+      # exe (NSIS) 本身不带语言后缀，无需处理。
+      - name: Strip language suffix from MSI
+        shell: bash
+        run: |
+          set -e
+          msi_dir="src-tauri/target/release/bundle/msi"
+          shopt -s nullglob
+          for f in "$msi_dir"/*_x64_??-??.msi; do
+            base="${f%_x64_??-??.msi}"
+            new="${base}_x64.msi"
+            if [ -e "$new" ]; then
+              echo "ERROR: target file already exists: $new" >&2
+              exit 1
+            fi
+            mv "$f" "$new"
+            echo "renamed: $(basename "$f") -> $(basename "$new")"
+          done
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
