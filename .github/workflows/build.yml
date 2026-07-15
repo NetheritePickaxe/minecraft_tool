@@ -18,15 +18,21 @@ defaults:
   run:
     working-directory: mc-toolbox
 
+# 同一分支新 push 取消旧构建，避免浪费
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: mc-toolbox/package-lock.json
 
@@ -52,12 +58,13 @@ jobs:
 
   build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: mc-toolbox/package-lock.json
 
@@ -79,7 +86,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          # 裁掉 i686(32位x86，极少见)；保留 aarch64/armv7(真机) + x86_64(模拟器)
+          # 裁掉 i686(对应 x86/32位，极少见)；保留 arm64-v8a/armeabi-v7a(真机) + x86_64(模拟器)
           targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
 
       - uses: Swatinem/rust-cache@v2
@@ -115,8 +122,35 @@ jobs:
       # release 剥离调试符号(Cargo profile.release.strip=true)，
       # 每个 ABI 的 .so 从 ~100MB(debug) 降到 ~10-20MB(release)；
       # --split-per-abi 为每个 ABI 产出独立 APK，避免 universal 单包过大。
+      # --target 使用 Tauri 简写: aarch64→arm64-v8a, armv7→armeabi-v7a, x86_64→x86_64
       - name: Build Android APK (release, split per ABI)
         run: npm run tauri android build -- --apk --split-per-abi --target aarch64 --target armv7 --target x86_64
+
+      # Gradle --split-per-abi 默认输出简写文件名(app-arm64-release.apk 等)，
+      # 不符合 Android ABI 命名规范。重命名为 <product>-<version>-<abi>.apk：
+      #   arm64  → arm64-v8a
+      #   arm    → armeabi-v7a
+      #   x86_64 → x86_64
+      # APK 实际路径在 <abi_short>/release/app-<abi_short>-release.apk
+      - name: Rename APK to standard ABI naming
+        run: |
+          set -e
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          PRODUCT="mc-toolbox"
+          OUT="src-tauri/gen/android/app/build/outputs/apk"
+          declare -A ABI_MAP=( ["arm64"]="arm64-v8a" ["arm"]="armeabi-v7a" ["x86_64"]="x86_64" ["x86"]="x86" )
+          for abi_short in "${!ABI_MAP[@]}"; do
+            abi_full="${ABI_MAP[$abi_short]}"
+            src="$OUT/${abi_short}/release/app-${abi_short}-release.apk"
+            if [ -f "$src" ]; then
+              dst="$OUT/${PRODUCT}-${VERSION}-${abi_full}.apk"
+              mv "$src" "$dst"
+              echo "renamed: $abi_short -> $abi_full"
+              echo "  $dst"
+            fi
+          done
+          echo "=== final APK list ==="
+          ls -lh "$OUT"/*.apk
 
       - name: Show APK sizes
         run: find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;
@@ -125,12 +159,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-artifacts
-          path: mc-toolbox/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: mc-toolbox/src-tauri/gen/android/app/build/outputs/apk/*.apk
           if-no-files-found: error
 
   release:
     needs: [build-windows, build-android]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     # 仅 tag 触发时发布，PR/手动触发只做构建验证
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -144,4 +179,4 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/windows-artifacts/*
-            artifacts/android-artifacts/**/*.apk
+            artifacts/android-artifacts/*.apk

@@ -10,16 +10,18 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
         "title": "MC 工具箱",
         "width": 900,
-        "height": 600
+        "height": 600,
+        "minWidth": 640,
+        "minHeight": 400
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: https://*; style-src 'self' 'unsafe-inline'; script-src 'self'"
     }
   },
   "bundle": {
