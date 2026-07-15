@@ -82,7 +82,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       <!-- 顶部导航栏：navbar（白底，仅标题） -->
       <div class="navbar bg-base-100 sticky top-0 z-30 px-4 min-h-14 border-b border-base-200">
         <div class="navbar-start">
-          <h1 class="text-xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">${t("app.title")}</h1>
+          <h1 class="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">${t("app.title")}</h1>
         </div>
       </div>
 

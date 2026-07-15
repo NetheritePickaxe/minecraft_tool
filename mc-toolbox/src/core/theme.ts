@@ -1,18 +1,120 @@
-// 主题管理：直接使用 DaisyUI 内置主题
+// 主题管理：直接使用 DaisyUI 全部 35 个内置主题
 // - 通过 <html data-theme="..."> 切换
 // - 持久化到 localStorage
 // - 顶栏按钮在 light/dark 间快速切换；设置页可选择全部主题
 
-export type Theme = "light" | "dark" | "forest" | "nord";
+export type Theme =
+  | "light"
+  | "dark"
+  | "cupcake"
+  | "bumblebee"
+  | "emerald"
+  | "corporate"
+  | "synthwave"
+  | "retro"
+  | "cyberpunk"
+  | "valentine"
+  | "halloween"
+  | "garden"
+  | "forest"
+  | "aqua"
+  | "lofi"
+  | "pastel"
+  | "fantasy"
+  | "wireframe"
+  | "black"
+  | "luxury"
+  | "dracula"
+  | "cmyk"
+  | "autumn"
+  | "business"
+  | "acid"
+  | "lemonade"
+  | "night"
+  | "coffee"
+  | "winter"
+  | "dim"
+  | "nord"
+  | "sunset"
+  | "caramellatte"
+  | "abyss"
+  | "silk";
 
-export const THEMES: Theme[] = ["light", "dark", "forest", "nord"];
+export const THEMES: Theme[] = [
+  "light",
+  "dark",
+  "cupcake",
+  "bumblebee",
+  "emerald",
+  "corporate",
+  "synthwave",
+  "retro",
+  "cyberpunk",
+  "valentine",
+  "halloween",
+  "garden",
+  "forest",
+  "aqua",
+  "lofi",
+  "pastel",
+  "fantasy",
+  "wireframe",
+  "black",
+  "luxury",
+  "dracula",
+  "cmyk",
+  "autumn",
+  "business",
+  "acid",
+  "lemonade",
+  "night",
+  "coffee",
+  "winter",
+  "dim",
+  "nord",
+  "sunset",
+  "caramellatte",
+  "abyss",
+  "silk",
+];
 
 /** 主题对应的中文名 i18n 键 */
 export const THEME_NAME_KEY: Record<Theme, string> = {
   light: "modules.settings.theme.name.light",
   dark: "modules.settings.theme.name.dark",
+  cupcake: "modules.settings.theme.name.cupcake",
+  bumblebee: "modules.settings.theme.name.bumblebee",
+  emerald: "modules.settings.theme.name.emerald",
+  corporate: "modules.settings.theme.name.corporate",
+  synthwave: "modules.settings.theme.name.synthwave",
+  retro: "modules.settings.theme.name.retro",
+  cyberpunk: "modules.settings.theme.name.cyberpunk",
+  valentine: "modules.settings.theme.name.valentine",
+  halloween: "modules.settings.theme.name.halloween",
+  garden: "modules.settings.theme.name.garden",
   forest: "modules.settings.theme.name.forest",
+  aqua: "modules.settings.theme.name.aqua",
+  lofi: "modules.settings.theme.name.lofi",
+  pastel: "modules.settings.theme.name.pastel",
+  fantasy: "modules.settings.theme.name.fantasy",
+  wireframe: "modules.settings.theme.name.wireframe",
+  black: "modules.settings.theme.name.black",
+  luxury: "modules.settings.theme.name.luxury",
+  dracula: "modules.settings.theme.name.dracula",
+  cmyk: "modules.settings.theme.name.cmyk",
+  autumn: "modules.settings.theme.name.autumn",
+  business: "modules.settings.theme.name.business",
+  acid: "modules.settings.theme.name.acid",
+  lemonade: "modules.settings.theme.name.lemonade",
+  night: "modules.settings.theme.name.night",
+  coffee: "modules.settings.theme.name.coffee",
+  winter: "modules.settings.theme.name.winter",
+  dim: "modules.settings.theme.name.dim",
   nord: "modules.settings.theme.name.nord",
+  sunset: "modules.settings.theme.name.sunset",
+  caramellatte: "modules.settings.theme.name.caramellatte",
+  abyss: "modules.settings.theme.name.abyss",
+  silk: "modules.settings.theme.name.silk",
 };
 
 const THEME_KEY = "mc-toolbox.theme";

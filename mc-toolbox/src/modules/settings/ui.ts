@@ -78,7 +78,7 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
         <div class="collapse-content">
           <!-- 主题选择：每个预览按钮用局部 data-theme 显示该主题真实颜色 -->
-          <div class="grid grid-cols-2 gap-2 mt-2" id="set-theme-list"></div>
+          <div class="grid grid-cols-3 gap-2 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
@@ -116,11 +116,9 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
       </div>
 
-      <!-- 关于 + 更新：仅在 Tauri 应用端显示 -->
-      ${
-        isApp
-          ? `<div class="card bg-base-100 rounded-2xl shadow-sm">
-        <div class="card-body gap-4">
+      <!-- 关于：所有平台都显示（版本/平台/作者） -->
+      <div class="card bg-base-100 rounded-2xl shadow-sm">
+        <div class="card-body gap-3">
           <h3 class="card-title text-base gap-2">
             <i data-lucide="info" class="w-4 h-4"></i>
             <span data-i18n="modules.settings.about.title"></span>
@@ -134,25 +132,42 @@ export function createUi(container: HTMLElement): SettingsUi {
                 </tr>
                 <tr>
                   <td class="opacity-70" data-i18n="modules.settings.about.platform"></td>
-                  <td class="text-right font-mono" id="set-platform"></td>
+                  <td class="text-right font-mono" id="set-platform">Web</td>
+                </tr>
+                <tr>
+                  <td class="opacity-70" data-i18n="modules.settings.about.author"></td>
+                  <td class="text-right font-mono">NetheritePickaxe</td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
 
-          <div class="divider my-0"></div>
-
+      <!-- 检查更新：仅 Tauri 应用端显示，按钮用 card 样式 -->
+      ${
+        isApp
+          ? `<div class="card bg-base-100 rounded-2xl shadow-sm">
+        <div class="card-body gap-3">
+          <h3 class="card-title text-base gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span data-i18n="modules.settings.update.title"></span>
+          </h3>
           <div id="set-update-area" class="space-y-3">
-            <button id="set-check-btn" class="btn btn-primary btn-sm w-full gap-2">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.update.check"></span>
-            </button>
+            <div id="set-check-card" class="card bg-primary/10 rounded-2xl cursor-pointer hover:bg-primary/15 transition-colors" role="button" tabindex="0">
+              <div class="card-body py-3 px-4 flex-row items-center gap-3">
+                <i data-lucide="refresh-cw" class="w-5 h-5 text-primary"></i>
+                <span class="flex-1 text-sm font-medium" data-i18n="modules.settings.update.check"></span>
+              </div>
+            </div>
             <div id="set-update-status" class="text-sm"></div>
             <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-            <button id="set-install-btn" class="btn btn-success btn-sm w-full gap-2 hidden">
-              <i data-lucide="download" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.update.install"></span>
-            </button>
+            <div id="set-install-card" class="card bg-success/10 rounded-2xl cursor-pointer hover:bg-success/15 transition-colors hidden" role="button" tabindex="0">
+              <div class="card-body py-3 px-4 flex-row items-center gap-3">
+                <i data-lucide="download" class="w-5 h-5 text-success"></i>
+                <span class="flex-1 text-sm font-medium" data-i18n="modules.settings.update.install"></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>`
@@ -165,13 +180,11 @@ export function createUi(container: HTMLElement): SettingsUi {
   const themeList = qs<HTMLElement>(container, "#set-theme-list");
   const versionEl = container.querySelector<HTMLElement>("#set-version");
   const platformEl = container.querySelector<HTMLElement>("#set-platform");
-  const checkBtn =
-    container.querySelector<HTMLButtonElement>("#set-check-btn");
+  const checkBtn = container.querySelector<HTMLElement>("#set-check-card");
   const statusBox = container.querySelector<HTMLElement>("#set-update-status");
   const progressBar =
     container.querySelector<HTMLProgressElement>("#set-progress");
-  const installBtn =
-    container.querySelector<HTMLButtonElement>("#set-install-btn");
+  const installBtn = container.querySelector<HTMLElement>("#set-install-card");
 
   function refresh(): void {
     container.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
@@ -202,7 +215,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
       (name) =>
-        `<button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 ${name === current ? "ring-2 ring-primary" : ""}" data-theme-set="${name}" data-theme="${name}">
+        `<button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 rounded-2xl border-0 ${name === current ? "bg-primary/15 ring-2 ring-primary" : "bg-base-200 hover:bg-base-300"}" data-theme-set="${name}" data-theme="${name}">
           <span class="w-5 h-5 rounded-full bg-primary border border-base-300"></span>
           <span class="text-xs">${t(THEME_NAME_KEY[name])}</span>
         </button>`,
@@ -215,19 +228,23 @@ export function createUi(container: HTMLElement): SettingsUi {
     const s = updateState;
     installBtn?.classList.add("hidden");
     progressBar?.classList.add("hidden");
+    const enableCheck = (on: boolean): void => {
+      checkBtn.classList.toggle("pointer-events-none", !on);
+      checkBtn.classList.toggle("opacity-50", !on);
+    };
 
     switch (s.kind) {
       case "idle":
         statusBox.innerHTML = "";
-        checkBtn.disabled = false;
+        enableCheck(true);
         break;
       case "checking":
         statusBox.innerHTML = `<span class="flex items-center gap-2"><span class="loading loading-spinner loading-xs"></span>${escapeHtml(t("modules.settings.update.checking"))}</span>`;
-        checkBtn.disabled = true;
+        enableCheck(false);
         break;
       case "up-to-date":
         statusBox.innerHTML = `<span class="flex items-center gap-2 text-success"><i data-lucide="check-circle" class="w-4 h-4"></i>${escapeHtml(t("modules.settings.update.up-to-date"))}</span>`;
-        checkBtn.disabled = false;
+        enableCheck(true);
         break;
       case "available": {
         const info = s.info;
@@ -253,7 +270,7 @@ export function createUi(container: HTMLElement): SettingsUi {
             ${platform === "android" ? `<div class="text-xs opacity-60 mt-1">${escapeHtml(t("modules.settings.update.android-hint"))}</div>` : ""}
           </div>
         `;
-        checkBtn.disabled = false;
+        enableCheck(true);
         installBtn?.classList.remove("hidden");
         break;
       }
@@ -262,16 +279,16 @@ export function createUi(container: HTMLElement): SettingsUi {
         statusBox.innerHTML = `<span class="flex items-center gap-2"><span class="loading loading-spinner loading-xs"></span>${escapeHtml(t("modules.settings.update.downloading", { percent: String(pct) }))}</span>`;
         progressBar?.classList.remove("hidden");
         if (progressBar) progressBar.value = pct;
-        checkBtn.disabled = true;
+        enableCheck(false);
         break;
       }
       case "installing":
         statusBox.innerHTML = `<span class="flex items-center gap-2"><span class="loading loading-spinner loading-xs"></span>${escapeHtml(t("modules.settings.update.installing"))}</span>`;
-        checkBtn.disabled = true;
+        enableCheck(false);
         break;
       case "error":
         statusBox.innerHTML = `<span class="flex items-center gap-2 text-error"><i data-lucide="alert-circle" class="w-4 h-4"></i>${escapeHtml(t("modules.settings.update.error", { message: s.message }))}</span>`;
-        checkBtn.disabled = false;
+        enableCheck(true);
         break;
     }
     container.dispatchEvent(
