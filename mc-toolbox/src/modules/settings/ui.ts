@@ -51,6 +51,7 @@ type UpdateState =
 
 export function createUi(container: HTMLElement): SettingsUi {
   const platform: Platform = detectPlatform();
+  const isApp = isTauri();
   let version = "0.0.0";
   let updateState: UpdateState = { kind: "idle" };
 
@@ -77,11 +78,11 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
         <div class="collapse-content">
           <!-- 主题选择：每个预览按钮用局部 data-theme 显示该主题真实颜色 -->
-          <div class="grid grid-cols-3 gap-2 mt-2" id="set-theme-list"></div>
+          <div class="grid grid-cols-2 gap-2 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
-      <!-- 链接：card + menu -->
+      <!-- 链接：card + menu（Web 端不显示「在线 Web 版」） -->
       <div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body p-0">
           <div class="card-title text-base gap-2 px-4 pt-4">
@@ -101,18 +102,24 @@ export function createUi(container: HTMLElement): SettingsUi {
                 <span data-i18n="modules.settings.links.issues"></span>
               </a>
             </li>
-            <li>
+            ${
+              isApp
+                ? `<li>
               <a data-link="${WEB_URL}" class="gap-2">
                 <i data-lucide="globe" class="w-4 h-4"></i>
                 <span data-i18n="modules.settings.links.web"></span>
               </a>
-            </li>
+            </li>`
+                : ""
+            }
           </ul>
         </div>
       </div>
 
-      <!-- 关于 + 更新：card + table + progress -->
-      <div class="card bg-base-100 rounded-2xl shadow-sm">
+      <!-- 关于 + 更新：仅在 Tauri 应用端显示 -->
+      ${
+        isApp
+          ? `<div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body gap-4">
           <h3 class="card-title text-base gap-2">
             <i data-lucide="info" class="w-4 h-4"></i>
@@ -148,18 +155,23 @@ export function createUi(container: HTMLElement): SettingsUi {
             </button>
           </div>
         </div>
-      </div>
+      </div>`
+          : ""
+      }
     </div>
   `;
 
   const localeList = qs<HTMLElement>(container, "#set-locale-list");
   const themeList = qs<HTMLElement>(container, "#set-theme-list");
-  const versionEl = qs<HTMLElement>(container, "#set-version");
-  const platformEl = qs<HTMLElement>(container, "#set-platform");
-  const checkBtn = qs<HTMLButtonElement>(container, "#set-check-btn");
-  const statusBox = qs<HTMLElement>(container, "#set-update-status");
-  const progressBar = qs<HTMLProgressElement>(container, "#set-progress");
-  const installBtn = qs<HTMLButtonElement>(container, "#set-install-btn");
+  const versionEl = container.querySelector<HTMLElement>("#set-version");
+  const platformEl = container.querySelector<HTMLElement>("#set-platform");
+  const checkBtn =
+    container.querySelector<HTMLButtonElement>("#set-check-btn");
+  const statusBox = container.querySelector<HTMLElement>("#set-update-status");
+  const progressBar =
+    container.querySelector<HTMLProgressElement>("#set-progress");
+  const installBtn =
+    container.querySelector<HTMLButtonElement>("#set-install-btn");
 
   function refresh(): void {
     container.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
@@ -167,8 +179,8 @@ export function createUi(container: HTMLElement): SettingsUi {
     });
     renderLocaleList();
     renderThemeButtons();
-    platformEl.textContent = platformLabel(platform);
-    versionEl.textContent = version;
+    if (platformEl) platformEl.textContent = platformLabel(platform);
+    if (versionEl) versionEl.textContent = version;
     renderUpdateStatus();
   }
 
@@ -198,9 +210,11 @@ export function createUi(container: HTMLElement): SettingsUi {
   }
 
   function renderUpdateStatus(): void {
+    // Web 端没有更新区，直接跳过
+    if (!isApp || !statusBox || !checkBtn) return;
     const s = updateState;
-    installBtn.classList.add("hidden");
-    progressBar.classList.add("hidden");
+    installBtn?.classList.add("hidden");
+    progressBar?.classList.add("hidden");
 
     switch (s.kind) {
       case "idle":
@@ -240,14 +254,14 @@ export function createUi(container: HTMLElement): SettingsUi {
           </div>
         `;
         checkBtn.disabled = false;
-        installBtn.classList.remove("hidden");
+        installBtn?.classList.remove("hidden");
         break;
       }
       case "downloading": {
         const pct = s.total > 0 ? Math.min(100, Math.round((s.progress / s.total) * 100)) : 0;
         statusBox.innerHTML = `<span class="flex items-center gap-2"><span class="loading loading-spinner loading-xs"></span>${escapeHtml(t("modules.settings.update.downloading", { percent: String(pct) }))}</span>`;
-        progressBar.classList.remove("hidden");
-        progressBar.value = pct;
+        progressBar?.classList.remove("hidden");
+        if (progressBar) progressBar.value = pct;
         checkBtn.disabled = true;
         break;
       }
@@ -273,7 +287,7 @@ export function createUi(container: HTMLElement): SettingsUi {
         version = "0.0.0";
       }
     }
-    versionEl.textContent = version;
+    if (versionEl) versionEl.textContent = version;
   }
 
   // ============== 事件处理 ==============
@@ -312,8 +326,8 @@ export function createUi(container: HTMLElement): SettingsUi {
     }
   });
 
-  checkBtn.addEventListener("click", () => void doCheckUpdate());
-  installBtn.addEventListener("click", () => void doInstall());
+  checkBtn?.addEventListener("click", () => void doCheckUpdate());
+  installBtn?.addEventListener("click", () => void doInstall());
 
   async function doCheckUpdate(): Promise<void> {
     if (!isTauri()) {

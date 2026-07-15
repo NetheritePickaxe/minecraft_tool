@@ -9,10 +9,8 @@ import {
   CheckCircle,
   Download,
   ExternalLink,
-  Globe,
   Home,
   Info,
-  Languages,
   LayoutGrid,
   MessageCircle,
   RefreshCw,
@@ -20,7 +18,6 @@ import {
   Search,
   Settings,
   Star,
-  SunMoon,
   Wrench,
 } from "lucide";
 import {
@@ -29,22 +26,12 @@ import {
   activateModule,
   deactivateActive,
 } from "./core/module-loader";
-import { t, getLocale, setLocale, onLocaleChange, initLocale } from "./lang";
-import type { LocaleCode } from "./lang";
+import { t, onLocaleChange, initLocale } from "./lang";
 import type { ModuleRegistration } from "./core/types";
-import {
-  resolveAndApply,
-  toggleMode,
-  onThemeChange,
-} from "./core/theme";
+import { resolveAndApply } from "./core/theme";
 
 declareModule(() => import("./modules/server-motd"));
 declareModule(() => import("./modules/settings"));
-
-const LOCALE_OPTIONS: Array<{ code: LocaleCode; label: string }> = [
-  { code: "zh_cn", label: "简体中文" },
-  { code: "en_us", label: "English" },
-];
 
 const ICONS = {
   AlertCircle,
@@ -53,10 +40,8 @@ const ICONS = {
   CheckCircle,
   Download,
   ExternalLink,
-  Globe,
   Home,
   Info,
-  Languages,
   LayoutGrid,
   MessageCircle,
   RefreshCw,
@@ -64,7 +49,6 @@ const ICONS = {
   Search,
   Settings,
   Star,
-  SunMoon,
   Wrench,
 };
 
@@ -81,21 +65,10 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   root.innerHTML = `
     <div class="min-h-screen flex flex-col bg-base-200">
-      <!-- 顶部导航栏：navbar（白底，左标题 + 右图标按钮） -->
+      <!-- 顶部导航栏：navbar（白底，仅标题） -->
       <div class="navbar bg-base-100 sticky top-0 z-30 px-4 min-h-14 border-b border-base-200">
         <div class="navbar-start">
-          <h1 class="text-lg font-bold">${t("app.title")}</h1>
-        </div>
-        <div class="navbar-end gap-1">
-          <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-sm btn-ghost btn-circle" aria-label="language">
-              <i data-lucide="globe" class="w-5 h-5"></i>
-            </div>
-            <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-40 w-40 p-2 shadow"></ul>
-          </div>
-          <button id="theme-btn" class="btn btn-sm btn-ghost btn-circle" aria-label="toggle theme">
-            <i data-lucide="sun-moon" class="w-5 h-5"></i>
-          </button>
+          <h1 class="text-xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">${t("app.title")}</h1>
         </div>
       </div>
 
@@ -170,8 +143,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const detailTitle = qs<HTMLElement>(root, "#detail-title");
   const backBtn = qs<HTMLButtonElement>(root, "#back-btn");
   const searchInput = qs<HTMLInputElement>(root, "#search-input");
-  const localeMenu = qs<HTMLElement>(root, "#locale-menu");
-  const themeBtn = qs<HTMLButtonElement>(root, "#theme-btn");
   const navHome = qs<HTMLElement>(root, "#nav-home");
   const navSettings = qs<HTMLElement>(root, "#nav-settings");
 
@@ -213,14 +184,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       )
       .join("");
     refreshIcons();
-  }
-
-  function renderLocale(): void {
-    const current = getLocale();
-    localeMenu.innerHTML = LOCALE_OPTIONS.map(
-      (o) =>
-        `<li><a class="locale-option ${o.code === current ? "active" : ""}" data-locale="${o.code}">${o.label}</a></li>`,
-    ).join("");
   }
 
   function refreshStaticText(): void {
@@ -290,7 +253,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   renderToolGrid();
-  renderLocale();
   refreshStaticText();
   refreshIcons();
   setNav("home");
@@ -307,18 +269,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   navHome.addEventListener("click", showHome);
   navSettings.addEventListener("click", showSettings);
 
-  localeMenu.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLAnchorElement>(
-      ".locale-option",
-    );
-    if (!btn) return;
-    setLocale(btn.dataset.locale as LocaleCode);
-  });
-
-  themeBtn.addEventListener("click", () => {
-    toggleMode();
-  });
-
   searchInput.addEventListener("input", () => {
     searchQuery = searchInput.value;
     renderToolGrid();
@@ -331,11 +281,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   onLocaleChange(() => {
     refreshStaticText();
     renderToolGrid();
-    renderLocale();
-  });
-
-  onThemeChange(() => {
-    // 主题切换由 data-theme 属性由 DaisyUI 自动处理
   });
 }
 
