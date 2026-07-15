@@ -17,7 +17,12 @@ const TIMEOUT: Duration = Duration::from_secs(5);
 /// 查询 Java 版服务器 MOTD
 pub fn query_java(host: &str, port: Option<u16>) -> std::io::Result<MotdResult> {
     let port = port.unwrap_or(DEFAULT_PORT);
-    let addr = format!("{host}:{port}");
+    // IPv6 字面量需用方括号包裹才能构成合法 SocketAddr
+    let addr = if host.contains(':') {
+        format!("[{host}]:{port}")
+    } else {
+        format!("{host}:{port}")
+    };
 
     let start = Instant::now();
     let mut stream = TcpStream::connect_timeout(

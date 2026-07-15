@@ -19,7 +19,12 @@ const MAGIC: [u8; 16] = [
 /// 查询基岩版服务器 MOTD
 pub fn query_bedrock(host: &str, port: Option<u16>) -> io::Result<MotdResult> {
     let port = port.unwrap_or(DEFAULT_PORT);
-    let addr = format!("{host}:{port}");
+    // IPv6 字面量需用方括号包裹才能构成合法 SocketAddr
+    let addr = if host.contains(':') {
+        format!("[{host}]:{port}")
+    } else {
+        format!("{host}:{port}")
+    };
 
     let socket = UdpSocket::bind("0.0.0.0:0")?;
     socket.set_read_timeout(Some(TIMEOUT))?;

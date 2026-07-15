@@ -31,21 +31,13 @@ export function createUi(container: HTMLElement): MotdUi {
             <a role="tab" class="tab tab-active" data-edition="java" data-i18n="modules.server-motd.edition.java"></a>
             <a role="tab" class="tab" data-edition="bedrock" data-i18n="modules.server-motd.edition.bedrock"></a>
           </div>
-          <!-- 输入：form-control + input input-bordered -->
-          <div class="flex flex-col sm:flex-row gap-3">
-            <label class="form-control flex-1">
-              <div class="label py-1">
-                <span class="label-text" data-i18n="modules.server-motd.input.host"></span>
-              </div>
-              <input id="motd-host" type="text" class="input input-bordered input-sm" placeholder="" />
-            </label>
-            <label class="form-control w-full sm:w-28">
-              <div class="label py-1">
-                <span class="label-text" data-i18n="modules.server-motd.input.port"></span>
-              </div>
-              <input id="motd-port" type="number" min="1" max="65535" class="input input-bordered input-sm" placeholder="" />
-            </label>
-          </div>
+          <!-- 输入：form-control + input input-bordered（支持 host / host:port / [ipv6]:port） -->
+          <label class="form-control">
+            <div class="label py-1">
+              <span class="label-text" data-i18n="modules.server-motd.input.host"></span>
+            </div>
+            <input id="motd-host" type="text" class="input input-bordered input-sm" placeholder="" />
+          </label>
           <!-- 查询按钮：btn btn-primary -->
           <button id="motd-query-btn" class="btn btn-primary btn-sm"></button>
         </div>
@@ -104,7 +96,6 @@ export function createUi(container: HTMLElement): MotdUi {
 
   const editionTabs = qs<HTMLElement>(container, "#motd-edition");
   const hostInput = qs<HTMLInputElement>(container, "#motd-host");
-  const portInput = qs<HTMLInputElement>(container, "#motd-port");
   const queryBtn = qs<HTMLButtonElement>(container, "#motd-query-btn");
   const errorBox = qs<HTMLElement>(container, "#motd-error");
   const resultBox = qs<HTMLElement>(container, "#motd-result");
@@ -121,7 +112,6 @@ export function createUi(container: HTMLElement): MotdUi {
       el.textContent = t(el.dataset.i18n!);
     });
     hostInput.placeholder = t("modules.server-motd.input.host.placeholder");
-    portInput.placeholder = t("modules.server-motd.input.port.placeholder");
     queryBtn.textContent = querying
       ? t("modules.server-motd.input.querying")
       : t("modules.server-motd.input.query");
@@ -185,10 +175,10 @@ export function createUi(container: HTMLElement): MotdUi {
       renderError({ kind: "invalid-host", message: "empty host" });
       return;
     }
-    const port = portInput.value ? Number(portInput.value) : null;
     setQuerying(true);
     try {
-      const result = await queryMotd({ edition, host, port });
+      // port 传 null，后端 mod.rs 会从 host 字段解析 host:port
+      const result = await queryMotd({ edition, host, port: null });
       lastResult = result;
       lastError = null;
       renderResult(result);
