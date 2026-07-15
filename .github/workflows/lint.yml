@@ -59,7 +59,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # clippy 需要解析依赖，先 fetch（不编译）
+      # Tauri 在 Linux 上编译依赖系统库（glib-sys、webkit2gtk 等），
+      # clippy 需要实际编译才能检查，必须先安装。
+      - name: Install Tauri Linux system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev \
+            build-essential curl wget file libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -70,8 +78,7 @@ jobs:
 
       # -D warnings: warning 当作 error，保证代码质量
       # --all-targets: 检查所有目标（含 tests/benches）
-      # 注意：桌面端 clippy 在 ubuntu-latest 可正常编译，
-      # Android target 的 clippy 需 NDK，这里不覆盖（由 build job 保证）
+      # 仅检查桌面端（默认 target），Android target 需 NDK，由 build job 覆盖
       - name: cargo clippy
         working-directory: mc-toolbox/src-tauri
         run: cargo clippy --all-targets -- -D warnings
