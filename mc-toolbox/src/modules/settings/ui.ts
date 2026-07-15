@@ -50,7 +50,7 @@ export function createUi(container: HTMLElement): SettingsUi {
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-3">
       <!-- 语言：collapse -->
-      <div class="collapse collapse-arrow bg-base-100 shadow-sm">
+      <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
         <input type="checkbox" checked />
         <div class="collapse-title font-medium flex items-center gap-2">
           <i data-lucide="languages" class="w-4 h-4"></i>
@@ -62,7 +62,7 @@ export function createUi(container: HTMLElement): SettingsUi {
       </div>
 
       <!-- 主题：collapse -->
-      <div class="collapse collapse-arrow bg-base-100 shadow-sm">
+      <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
         <input type="checkbox" checked />
         <div class="collapse-title font-medium flex items-center gap-2">
           <i data-lucide="sun-moon" class="w-4 h-4"></i>
@@ -77,7 +77,7 @@ export function createUi(container: HTMLElement): SettingsUi {
       </div>
 
       <!-- 链接：card + menu -->
-      <div class="card bg-base-100 shadow-sm">
+      <div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body p-0">
           <div class="card-title text-base gap-2 px-4 pt-4">
             <i data-lucide="external-link" class="w-4 h-4"></i>
@@ -107,7 +107,7 @@ export function createUi(container: HTMLElement): SettingsUi {
       </div>
 
       <!-- 关于 + 更新：card + table + progress -->
-      <div class="card bg-base-100 shadow-sm">
+      <div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body gap-4">
           <h3 class="card-title text-base gap-2">
             <i data-lucide="info" class="w-4 h-4"></i>

@@ -78,13 +78,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   root.innerHTML = `
     <div class="min-h-screen flex flex-col bg-base-200">
-      <!-- 顶部导航栏：navbar -->
-      <div class="navbar bg-base-100 shadow-sm sticky top-0 z-30 px-4 gap-2">
+      <!-- 顶部导航栏：navbar（无阴影，与内容区分层靠背景色差） -->
+      <div class="navbar bg-base-100 sticky top-0 z-30 px-4 gap-2 border-b border-base-300/50">
         <div class="navbar-start">
           <h1 class="text-xl font-bold">${t("app.title")}</h1>
         </div>
         <div class="navbar-end gap-1">
-          <!-- 语言下拉：dropdown + menu -->
           <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-sm btn-ghost gap-1">
               <i data-lucide="languages" class="w-4 h-4"></i>
@@ -92,21 +91,20 @@ export async function mountApp(root: HTMLElement): Promise<void> {
             </div>
             <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-40 w-40 p-2 shadow"></ul>
           </div>
-          <!-- 主题切换 -->
           <button id="theme-btn" class="btn btn-sm btn-ghost btn-circle" aria-label="toggle theme">
             <i data-lucide="sun-moon" class="w-4 h-4"></i>
           </button>
         </div>
       </div>
 
-      <main class="flex-1 pb-16">
+      <main class="flex-1 pb-20">
         <!-- 卡片墙主页 -->
-        <section id="home-view" class="max-w-6xl mx-auto p-4">
+        <section id="home-view" class="max-w-6xl mx-auto p-4 sm:p-6">
           <div class="mb-6">
             <h2 class="text-2xl font-bold" data-i18n="app.home"></h2>
             <p class="text-sm opacity-60 mt-1" data-i18n="app.tagline"></p>
           </div>
-          <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+          <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
           <div id="empty-hint" class="hidden text-center py-20 opacity-50">
             <p data-i18n="app.empty"></p>
           </div>
@@ -114,7 +112,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
         <!-- 工具详情页 -->
         <section id="detail-view" class="hidden">
-          <div class="navbar bg-base-100 shadow-sm sticky top-16 z-20 px-4 min-h-14">
+          <div class="navbar bg-base-100/80 backdrop-blur sticky top-16 z-20 px-4 min-h-14 border-b border-base-300/50">
             <div class="navbar-start">
               <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -125,7 +123,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
               <span id="detail-title" class="font-semibold"></span>
             </div>
           </div>
-          <div id="module-container" class="max-w-4xl mx-auto p-4"></div>
+          <div id="module-container" class="max-w-4xl mx-auto p-4 sm:p-6"></div>
         </section>
       </main>
 
@@ -158,7 +156,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   let activeModuleId: string | null = null;
 
-  // 渲染工具卡片墙：card + card-body
+  // 渲染工具卡片墙：顶部 icon 区 + 底部标题简介，大圆角
   function renderToolGrid(): void {
     if (tools.length === 0) {
       emptyHint.classList.remove("hidden");
@@ -170,17 +168,13 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     toolGrid.innerHTML = tools
       .map(
         (m) => `
-          <button class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left" data-module-id="${m.id}">
-            <div class="card-body p-4 gap-2">
-              <div class="flex items-center gap-3">
-                <div class="avatar">
-                  <div class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center">
-                    <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5"></i>
-                  </div>
-                </div>
-                <h3 class="card-title text-sm font-semibold flex-1 truncate">${t(m.nameKey)}</h3>
-              </div>
-              <p class="text-xs opacity-60 line-clamp-2">${
+          <button class="card bg-base-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer text-left" data-module-id="${m.id}">
+            <div class="h-20 bg-primary/10 flex items-center justify-center">
+              <i data-lucide="${m.icon ?? "wrench"}" class="w-8 h-8 text-primary"></i>
+            </div>
+            <div class="card-body p-4 gap-1">
+              <h3 class="card-title text-sm font-semibold">${t(m.nameKey)}</h3>
+              <p class="text-xs opacity-60 line-clamp-2 leading-relaxed">${
                 m.descriptionKey ? t(m.descriptionKey) : ""
               }</p>
             </div>

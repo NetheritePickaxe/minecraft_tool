@@ -24,7 +24,7 @@ export function createUi(container: HTMLElement): MotdUi {
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-4">
       <!-- 查询表单：card -->
-      <div class="card bg-base-100 shadow-sm">
+      <div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body gap-4">
           <!-- 版本切换：tabs tabs-boxed -->
           <div role="tablist" class="tabs tabs-boxed bg-base-200" id="motd-edition">
@@ -57,7 +57,7 @@ export function createUi(container: HTMLElement): MotdUi {
       <!-- 结果区 -->
       <div id="motd-result" class="hidden space-y-4">
         <!-- 描述卡片：card -->
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
           <div class="card-body">
             <div class="flex items-start gap-3">
               <div class="avatar flex-none">
@@ -92,7 +92,7 @@ export function createUi(container: HTMLElement): MotdUi {
         </div>
 
         <!-- 玩家列表：card -->
-        <div class="card bg-base-100 shadow-sm">
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
           <div class="card-body">
             <h3 class="card-title text-base" data-i18n="modules.server-motd.result.player-list"></h3>
             <div id="motd-player-list" class="flex flex-wrap gap-1.5"></div>
