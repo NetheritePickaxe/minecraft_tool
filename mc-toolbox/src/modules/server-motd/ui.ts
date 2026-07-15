@@ -1,9 +1,9 @@
-// server-motd 模块 UI：输入表单 + 结果展示 + 错误提示
-// 所有可见文本走 t()，语言切换时通过 refresh() 更新静态文本
+// server-motd 模块 UI
+// 使用 DaisyUI 组件：card / tabs / form-control / input / btn / alert / stats / badge
+// 所有可见文本走 t()，语言切换时通过 refresh() 更新
 
 import { t, onLocaleChange } from "../../lang";
 import {
-  isTauri,
   queryMotd,
   type Edition,
   type MotdResult,
@@ -24,69 +24,82 @@ export function createUi(container: HTMLElement): MotdUi {
 
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-4">
-      <div id="motd-notauri" class="alert alert-warning hidden"></div>
-
-      <div class="card bg-base-100 shadow">
+      <!-- 查询表单：DaisyUI card + tabs -->
+      <div class="card bg-base-100 border border-base-300">
         <div class="card-body gap-4">
-          <div role="tablist" class="tabs tabs-boxed" id="motd-edition">
-            <button role="tab" class="tab tab-active" data-edition="java" data-i18n="modules.server-motd.edition.java"></button>
-            <button role="tab" class="tab" data-edition="bedrock" data-i18n="modules.server-motd.edition.bedrock"></button>
+          <div role="tablist" class="tabs tabs-boxed bg-base-200" id="motd-edition">
+            <a role="tab" class="tab tab-active" data-edition="java" data-i18n="modules.server-motd.edition.java"></a>
+            <a role="tab" class="tab" data-edition="bedrock" data-i18n="modules.server-motd.edition.bedrock"></a>
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <label class="form-control flex-1">
-              <span class="label-text mb-1" data-i18n="modules.server-motd.input.host"></span>
-              <input id="motd-host" type="text" class="input input-bordered" placeholder="" />
+              <div class="label py-1">
+                <span class="label-text" data-i18n="modules.server-motd.input.host"></span>
+              </div>
+              <input id="motd-host" type="text" class="input input-bordered input-sm" placeholder="" />
             </label>
-            <label class="form-control w-full sm:w-32">
-              <span class="label-text mb-1" data-i18n="modules.server-motd.input.port"></span>
-              <input id="motd-port" type="number" min="1" max="65535" class="input input-bordered" placeholder="" />
+            <label class="form-control w-full sm:w-28">
+              <div class="label py-1">
+                <span class="label-text" data-i18n="modules.server-motd.input.port"></span>
+              </div>
+              <input id="motd-port" type="number" min="1" max="65535" class="input input-bordered input-sm" placeholder="" />
             </label>
           </div>
-          <button id="motd-query-btn" class="btn btn-primary"></button>
+          <button id="motd-query-btn" class="btn btn-primary btn-sm"></button>
         </div>
       </div>
 
+      <!-- 错误提示：DaisyUI alert -->
       <div id="motd-error" class="alert alert-error hidden"></div>
 
+      <!-- 结果区 -->
       <div id="motd-result" class="hidden space-y-4">
-        <div class="card bg-base-100 shadow">
+        <!-- 描述卡片 -->
+        <div class="card bg-base-100 border border-base-300">
           <div class="card-body">
-            <div class="flex items-start gap-4">
-              <img id="motd-favicon" class="w-16 h-16 hidden" alt="favicon" />
+            <div class="flex items-start gap-3">
+              <div class="avatar flex-none">
+                <div class="w-12 h-12 rounded bg-base-200 flex items-center justify-center overflow-hidden">
+                  <img id="motd-favicon" class="hidden" alt="favicon" />
+                </div>
+              </div>
               <div class="flex-1 min-w-0">
-                <div id="motd-description" class="text-lg break-words"></div>
+                <div id="motd-description" class="break-words"></div>
                 <div class="mt-1">
-                  <span class="badge badge-ghost" id="motd-latency-badge"></span>
+                  <span class="badge badge-ghost badge-sm" id="motd-latency-badge"></span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="stats stats-vertical sm:stats-horizontal shadow w-full bg-base-100">
+
+        <!-- 统计数据：DaisyUI stats -->
+        <div class="stats stats-vertical sm:stats-horizontal shadow bg-base-100 border border-base-300 w-full">
           <div class="stat">
-            <div class="stat-title" data-i18n="modules.server-motd.result.players"></div>
-            <div class="stat-value text-2xl" id="motd-players-val"></div>
+            <div class="stat-title text-xs" data-i18n="modules.server-motd.result.players"></div>
+            <div class="stat-value text-lg" id="motd-players-val"></div>
           </div>
           <div class="stat">
-            <div class="stat-title" data-i18n="modules.server-motd.result.version"></div>
-            <div class="stat-value text-2xl" id="motd-version-val"></div>
+            <div class="stat-title text-xs" data-i18n="modules.server-motd.result.version"></div>
+            <div class="stat-value text-lg" id="motd-version-val"></div>
           </div>
           <div class="stat">
-            <div class="stat-title" data-i18n="modules.server-motd.result.latency"></div>
-            <div class="stat-value text-2xl" id="motd-latency-val"></div>
+            <div class="stat-title text-xs" data-i18n="modules.server-motd.result.latency"></div>
+            <div class="stat-value text-lg" id="motd-latency-val"></div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow">
+
+        <!-- 玩家列表 -->
+        <div class="card bg-base-100 border border-base-300">
           <div class="card-body">
             <h3 class="card-title text-base" data-i18n="modules.server-motd.result.player-list"></h3>
-            <div id="motd-player-list" class="flex flex-wrap gap-2"></div>
+            <div id="motd-player-list" class="flex flex-wrap gap-1"></div>
           </div>
         </div>
       </div>
     </div>
   `;
 
-  const notauri = qs<HTMLElement>(container, "#motd-notauri");
   const editionTabs = qs<HTMLElement>(container, "#motd-edition");
   const hostInput = qs<HTMLInputElement>(container, "#motd-host");
   const portInput = qs<HTMLInputElement>(container, "#motd-port");
@@ -112,15 +125,6 @@ export function createUi(container: HTMLElement): MotdUi {
       : t("modules.server-motd.input.query");
     queryBtn.disabled = querying;
 
-    if (!isTauri()) {
-      notauri.classList.remove("hidden");
-      notauri.textContent = t("modules.server-motd.error.unavailable-web");
-      queryBtn.disabled = true;
-    } else {
-      notauri.classList.add("hidden");
-    }
-
-    // 刷新已有结果/错误的动态文本
     if (lastResult) renderResult(lastResult);
     if (lastError) renderError(lastError);
   }
@@ -130,7 +134,7 @@ export function createUi(container: HTMLElement): MotdUi {
     queryBtn.textContent = v
       ? t("modules.server-motd.input.querying")
       : t("modules.server-motd.input.query");
-    queryBtn.disabled = v || !isTauri();
+    queryBtn.disabled = v;
   }
 
   function renderError(err: MotdError): void {
@@ -166,7 +170,9 @@ export function createUi(container: HTMLElement): MotdUi {
       playerList.innerHTML = `<span class="text-sm opacity-60">${escapeHtml(t("modules.server-motd.result.player-list.empty"))}</span>`;
     } else {
       playerList.innerHTML = sample
-        .map((p) => `<span class="badge badge-outline">${escapeHtml(p.name)}</span>`)
+        .map(
+          (p) => `<span class="badge badge-outline badge-sm">${escapeHtml(p.name)}</span>`,
+        )
         .join("");
     }
   }
@@ -186,7 +192,8 @@ export function createUi(container: HTMLElement): MotdUi {
       renderResult(result);
     } catch (e) {
       const err = e as MotdError;
-      lastError = err && "kind" in err ? err : { kind: "unknown", message: String(e) };
+      lastError =
+        err && "kind" in err ? err : { kind: "unknown", message: String(e) };
       lastResult = null;
       renderError(lastError);
     } finally {
@@ -195,16 +202,18 @@ export function createUi(container: HTMLElement): MotdUi {
   }
 
   editionTabs.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-edition]');
+    const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-edition]");
     if (!btn) return;
     edition = btn.dataset.edition as Edition;
-    editionTabs.querySelectorAll(".tab").forEach((t) => t.classList.remove("tab-active"));
+    editionTabs
+      .querySelectorAll(".tab")
+      .forEach((t) => t.classList.remove("tab-active"));
     btn.classList.add("tab-active");
   });
 
-  queryBtn.addEventListener("click", doQuery);
+  queryBtn.addEventListener("click", () => void doQuery());
   hostInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") doQuery();
+    if (e.key === "Enter") void doQuery();
   });
 
   const offLocale = onLocaleChange(() => refresh());

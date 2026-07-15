@@ -1,5 +1,5 @@
-// settings 模块 UI：语言 / 主题 / 链接区 / 版本号 / 检测更新 / 应用内更新
-// 系统模块，不显示在卡片墙，仅通过底边栏入口进入
+// settings 模块 UI
+// 使用 DaisyUI 组件：card / btn-group / join / collapse / table / divider / progress / alert
 // 所有可见文本走 t()，语言切换时通过 refresh() 更新
 
 import { t, onLocaleChange, setLocale, getLocale } from "../../lang";
@@ -55,81 +55,95 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-4">
-      <!-- 语言 -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h3 class="card-title text-base gap-2">
-            <i data-lucide="languages" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.language.title"></span>
-          </h3>
-          <div id="set-locale-list" class="flex flex-wrap gap-2"></div>
+      <!-- 语言：DaisyUI collapse -->
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="checkbox" checked />
+        <div class="collapse-title font-medium flex items-center gap-2">
+          <i data-lucide="languages" class="w-4 h-4"></i>
+          <span data-i18n="modules.settings.language.title"></span>
+        </div>
+        <div class="collapse-content">
+          <div class="btn-group join w-full mt-2" id="set-locale-list"></div>
         </div>
       </div>
 
-      <!-- 主题 -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h3 class="card-title text-base gap-2">
-            <i data-lucide="sun-moon" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.theme.title"></span>
-          </h3>
-          <div class="flex gap-2">
-            <button class="btn btn-sm" data-theme-set="light" data-i18n="modules.settings.theme.light"></button>
-            <button class="btn btn-sm" data-theme-set="dark" data-i18n="modules.settings.theme.dark"></button>
+      <!-- 主题：DaisyUI collapse -->
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="checkbox" checked />
+        <div class="collapse-title font-medium flex items-center gap-2">
+          <i data-lucide="sun-moon" class="w-4 h-4"></i>
+          <span data-i18n="modules.settings.theme.title"></span>
+        </div>
+        <div class="collapse-content">
+          <div class="btn-group join w-full mt-2" id="set-theme-list">
+            <button class="btn btn-sm join-item flex-1" data-theme-set="light" data-i18n="modules.settings.theme.light"></button>
+            <button class="btn btn-sm join-item flex-1" data-theme-set="dark" data-i18n="modules.settings.theme.dark"></button>
           </div>
         </div>
       </div>
 
-      <!-- 链接 -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h3 class="card-title text-base gap-2">
+      <!-- 链接：DaisyUI menu -->
+      <div class="card bg-base-100 border border-base-300">
+        <div class="card-body p-0">
+          <div class="card-title text-base gap-2 px-4 pt-4">
             <i data-lucide="external-link" class="w-4 h-4"></i>
             <span data-i18n="modules.settings.links.title"></span>
-          </h3>
-          <div class="space-y-2">
-            <button class="btn btn-ghost btn-sm w-full justify-start gap-2" data-link="${REPO_URL}">
-              <i data-lucide="star" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.links.repo"></span>
-            </button>
-            <button class="btn btn-ghost btn-sm w-full justify-start gap-2" data-link="${ISSUES_URL}">
-              <i data-lucide="message-circle" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.links.issues"></span>
-            </button>
-            <button class="btn btn-ghost btn-sm w-full justify-start gap-2" data-link="${WEB_URL}">
-              <i data-lucide="globe" class="w-4 h-4"></i>
-              <span data-i18n="modules.settings.links.web"></span>
-            </button>
           </div>
+          <ul class="menu menu-sm w-full p-2 mt-2">
+            <li>
+              <a data-link="${REPO_URL}" class="gap-2">
+                <i data-lucide="star" class="w-4 h-4"></i>
+                <span data-i18n="modules.settings.links.repo"></span>
+              </a>
+            </li>
+            <li>
+              <a data-link="${ISSUES_URL}" class="gap-2">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                <span data-i18n="modules.settings.links.issues"></span>
+              </a>
+            </li>
+            <li>
+              <a data-link="${WEB_URL}" class="gap-2">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+                <span data-i18n="modules.settings.links.web"></span>
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <!-- 关于 / 更新 -->
-      <div class="card bg-base-100 shadow">
+      <!-- 关于 + 更新：DaisyUI card + table + progress -->
+      <div class="card bg-base-100 border border-base-300">
         <div class="card-body gap-4">
           <h3 class="card-title text-base gap-2">
             <i data-lucide="info" class="w-4 h-4"></i>
             <span data-i18n="modules.settings.about.title"></span>
           </h3>
-          <div class="flex items-center justify-between">
-            <span class="text-sm opacity-70" data-i18n="modules.settings.about.version"></span>
-            <span class="font-mono text-sm" id="set-version">0.0.0</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-sm opacity-70" data-i18n="modules.settings.about.platform"></span>
-            <span class="font-mono text-sm" id="set-platform"></span>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <td class="opacity-70" data-i18n="modules.settings.about.version"></td>
+                  <td class="text-right font-mono" id="set-version">0.0.0</td>
+                </tr>
+                <tr>
+                  <td class="opacity-70" data-i18n="modules.settings.about.platform"></td>
+                  <td class="text-right font-mono" id="set-platform"></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <div class="divider my-0"></div>
 
           <div id="set-update-area" class="space-y-3">
-            <button id="set-check-btn" class="btn btn-primary btn-sm gap-2">
+            <button id="set-check-btn" class="btn btn-primary btn-sm w-full gap-2">
               <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               <span data-i18n="modules.settings.update.check"></span>
             </button>
             <div id="set-update-status" class="text-sm"></div>
             <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-            <button id="set-install-btn" class="btn btn-success btn-sm gap-2 hidden">
+            <button id="set-install-btn" class="btn btn-success btn-sm w-full gap-2 hidden">
               <i data-lucide="download" class="w-4 h-4"></i>
               <span data-i18n="modules.settings.update.install"></span>
             </button>
@@ -168,7 +182,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getLocale();
     localeList.innerHTML = LOCALE_OPTIONS.map(
       (o) =>
-        `<button class="btn btn-sm ${o.code === current ? "btn-primary" : "btn-ghost"}" data-locale="${o.code}">${o.label}</button>`,
+        `<button class="btn btn-sm join-item flex-1 ${o.code === current ? "btn-active" : "btn-ghost"}" data-locale="${o.code}">${o.label}</button>`,
     ).join("");
   }
 
@@ -178,14 +192,13 @@ export function createUi(container: HTMLElement): SettingsUi {
       .querySelectorAll<HTMLButtonElement>("[data-theme-set]")
       .forEach((btn) => {
         const theme = btn.dataset.themeSet as "light" | "dark";
-        btn.classList.toggle("btn-primary", theme === current);
+        btn.classList.toggle("btn-active", theme === current);
         btn.classList.toggle("btn-ghost", theme !== current);
       });
   }
 
   function renderUpdateStatus(): void {
     const s = updateState;
-    // 默认隐藏安装按钮与进度条，按状态再显示
     installBtn.classList.add("hidden");
     progressBar.classList.add("hidden");
 
@@ -247,14 +260,6 @@ export function createUi(container: HTMLElement): SettingsUi {
         checkBtn.disabled = false;
         break;
     }
-    refreshIcons();
-  }
-
-  function refreshIcons(): void {
-    // 由 app.ts 全局 createIcons 渲染。这里发一个事件通知刷新
-    // 但 settings 内部的图标也已被全局渲染过，这里仅在状态变化后重新触发
-    // 直接调用 createIcons 会引入循环依赖，所以由 app.ts 监听 localeChange 与自定义事件触发
-    // 这里通过派发一个 DOM 事件让 app.ts 监听
     container.dispatchEvent(
       new CustomEvent("settings:icons-stale", { bubbles: true }),
     );
@@ -267,8 +272,6 @@ export function createUi(container: HTMLElement): SettingsUi {
       } catch {
         version = "0.0.0";
       }
-    } else {
-      version = "0.0.0";
     }
     versionEl.textContent = version;
   }
@@ -292,7 +295,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     });
 
   container.addEventListener("click", async (e) => {
-    const linkBtn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+    const linkBtn = (e.target as HTMLElement).closest<HTMLAnchorElement>(
       "[data-link]",
     );
     if (!linkBtn) return;
@@ -304,7 +307,6 @@ export function createUi(container: HTMLElement): SettingsUi {
         console.error("open url failed:", err);
       }
     } else {
-      // Web 端直接打开
       window.open(url, "_blank", "noopener,noreferrer");
     }
   });
@@ -384,7 +386,6 @@ export function createUi(container: HTMLElement): SettingsUi {
               break;
           }
         });
-        // Windows NSIS 安装器会自动重启；MSI 可能需要手动重启
         updateState = { kind: "installing" };
         renderUpdateStatus();
       } catch (err) {
@@ -398,7 +399,6 @@ export function createUi(container: HTMLElement): SettingsUi {
       const apkUrl = (info as AndroidUpdateInfo).apkUrl;
       try {
         await openAndroidDownload(apkUrl);
-        // 浏览器接管下载，不修改 updateState
       } catch (err) {
         updateState = {
           kind: "error",
@@ -409,13 +409,9 @@ export function createUi(container: HTMLElement): SettingsUi {
     }
   }
 
-  // 主题变化时刷新按钮高亮
   const offTheme = onThemeChange(() => renderThemeButtons());
-
-  // 语言变化时刷新所有文本
   const offLocale = onLocaleChange(() => refresh());
 
-  // 初始化
   void loadVersion();
   refresh();
 
