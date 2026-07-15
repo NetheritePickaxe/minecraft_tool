@@ -1,0 +1,62 @@
+name: Deploy Web
+
+# 构建前端并部署到 GitHub Pages。
+# - push main：构建 + 部署
+# - PR：仅构建验证，不部署
+# 前置条件：仓库 Settings → Pages → Source 设为 "GitHub Actions"。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+# 项目位于 mc-toolbox 子目录
+defaults:
+  run:
+    working-directory: mc-toolbox
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mc-toolbox/package-lock.json
+
+      - run: npm ci
+
+      # 部署到 https://<user>.github.io/<repo>/，需将 base 设为 /<repo>/
+      - name: Build frontend
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: mc-toolbox/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # push main 或手动触发时部署；PR 仅构建不部署
+    if: github.event_name != 'pull_request'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
