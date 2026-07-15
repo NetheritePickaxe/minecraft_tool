@@ -3,34 +3,17 @@
 // - 持久化到 localStorage
 // - 顶栏按钮在 light/dark 间快速切换；设置页可选择全部主题
 
-export type Theme =
-  | "light"
-  | "dark"
-  | "cupcake"
-  | "bumblebee"
-  | "emerald"
-  | "corporate"
-  | "synthwave"
-  | "cyberpunk"
-  | "dracula"
-  | "forest"
-  | "nord"
-  | "sunset";
+export type Theme = "light" | "dark" | "forest" | "nord";
 
-export const THEMES: Theme[] = [
-  "light",
-  "dark",
-  "cupcake",
-  "bumblebee",
-  "emerald",
-  "corporate",
-  "synthwave",
-  "cyberpunk",
-  "dracula",
-  "forest",
-  "nord",
-  "sunset",
-];
+export const THEMES: Theme[] = ["light", "dark", "forest", "nord"];
+
+/** 主题对应的中文名 i18n 键 */
+export const THEME_NAME_KEY: Record<Theme, string> = {
+  light: "modules.settings.theme.name.light",
+  dark: "modules.settings.theme.name.dark",
+  forest: "modules.settings.theme.name.forest",
+  nord: "modules.settings.theme.name.nord",
+};
 
 const THEME_KEY = "mc-toolbox.theme";
 

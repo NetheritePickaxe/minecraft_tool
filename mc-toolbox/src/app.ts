@@ -115,7 +115,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
             <span class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
               <i data-lucide="layout-grid" class="w-4 h-4 text-primary"></i>
             </span>
-            <h2 class="font-bold text-base" data-i18n="app.featured"></h2>
+            <h2 class="font-bold text-base" data-i18n="app.tools"></h2>
           </div>
 
           <!-- 工具卡片网格：2 列 -->

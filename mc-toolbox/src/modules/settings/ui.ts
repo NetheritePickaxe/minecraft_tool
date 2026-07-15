@@ -8,6 +8,7 @@ import {
   getTheme,
   onThemeChange,
   THEMES,
+  THEME_NAME_KEY,
   type Theme,
 } from "../../core/theme";
 import {
@@ -189,9 +190,9 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
       (name) =>
-        `<button class="btn btn-sm flex-col gap-1 h-auto py-2 ${name === current ? "ring-2 ring-primary" : ""}" data-theme-set="${name}" data-theme="${name}">
+        `<button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 ${name === current ? "ring-2 ring-primary" : ""}" data-theme-set="${name}" data-theme="${name}">
           <span class="w-5 h-5 rounded-full bg-primary border border-base-300"></span>
-          <span class="text-[11px] capitalize">${name}</span>
+          <span class="text-xs">${t(THEME_NAME_KEY[name])}</span>
         </button>`,
     ).join("");
   }

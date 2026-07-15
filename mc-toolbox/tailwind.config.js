@@ -20,20 +20,7 @@ export default {
   plugins: [daisyui],
   daisyui: {
     // 直接使用 DaisyUI 内置主题，不自定义颜色
-    themes: [
-      "light",
-      "dark",
-      "cupcake",
-      "bumblebee",
-      "emerald",
-      "corporate",
-      "synthwave",
-      "cyberpunk",
-      "dracula",
-      "forest",
-      "nord",
-      "sunset",
-    ],
+    themes: ["light", "dark", "forest", "nord"],
     darkTheme: "dark",
   },
 };
