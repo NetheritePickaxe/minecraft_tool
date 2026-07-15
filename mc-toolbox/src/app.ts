@@ -1,6 +1,8 @@
-// 应用框架：MD3 风格卡片墙主页 + 工具详情页 + 底边栏
-// 视觉规范：Material Design 3（Top App Bar / Filled Card / State Layer / 全圆角按钮）
-// 组件库：DaisyUI 基础 + 自定义 md3-* 类
+// 应用框架：MD3 风格卡片墙主页 + 工具详情页 + 底部 NavigationBar
+// 视觉规范：Material Design 3
+// - Top App Bar（标题 + 语言/主题 icon button）
+// - 卡片墙（filled clickable cards，圆形图标 container）
+// - 底部 NavigationBar（首页 + 设置，带 active indicator pill）
 
 import {
   createIcons,
@@ -11,6 +13,7 @@ import {
   Download,
   ExternalLink,
   Globe,
+  Home,
   Info,
   Languages,
   MessageCircle,
@@ -53,6 +56,7 @@ const ICONS = {
   Download,
   ExternalLink,
   Globe,
+  Home,
   Info,
   Languages,
   MessageCircle,
@@ -64,6 +68,8 @@ const ICONS = {
   Wrench,
 };
 
+type NavTab = "home" | "settings";
+
 /** 构建应用骨架并挂载到 #app */
 export async function mountApp(root: HTMLElement): Promise<void> {
   initLocale();
@@ -74,12 +80,11 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const settingsModule = modules.find((m) => m.system && m.id === "settings");
 
   root.innerHTML = `
-    <div class="min-h-screen flex flex-col bg-base-100">
+    <div class="min-h-screen flex flex-col bg-base-200">
       <!-- MD3 Top App Bar -->
       <header class="md3-appbar">
         <span class="md3-appbar-title">${t("app.title")}</span>
         <div class="flex-none gap-1 flex items-center">
-          <!-- 语言：MD3 dropdown（用 DaisyUI dropdown 结构） -->
           <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="md3-btn-text md3-btn-sm gap-1">
               <i data-lucide="languages" class="w-4 h-4"></i>
@@ -87,14 +92,13 @@ export async function mountApp(root: HTMLElement): Promise<void> {
             </div>
             <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-lg z-40 w-40 p-1 shadow-lg border border-base-300"></ul>
           </div>
-          <!-- 主题切换：icon button -->
           <button id="theme-btn" class="md3-btn-text md3-btn-sm !px-2" aria-label="toggle theme">
             <i data-lucide="sun-moon" class="w-4 h-4"></i>
           </button>
         </div>
       </header>
 
-      <main class="flex-1">
+      <main class="flex-1 pb-20">
         <!-- 卡片墙主页 -->
         <section id="home-view" class="max-w-6xl mx-auto p-4">
           <div class="mb-5">
@@ -119,16 +123,23 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- MD3 底边栏 -->
-      <footer class="md3-navbar-bottom text-base-content/70">
-        <span>© 2025 MC Toolbox</span>
-        <button id="settings-btn" class="md3-btn-text md3-btn-sm gap-1" ${
+      <!-- MD3 NavigationBar -->
+      <nav class="md3-nav-bar">
+        <button id="nav-home" class="md3-nav-item active" data-nav="home">
+          <span class="md3-nav-icon">
+            <i data-lucide="home" class="w-5 h-5"></i>
+          </span>
+          <span class="md3-nav-label" data-i18n="app.home"></span>
+        </button>
+        <button id="nav-settings" class="md3-nav-item" data-nav="settings" ${
           settingsModule ? "" : "disabled"
         }>
-          <i data-lucide="settings" class="w-4 h-4"></i>
-          <span data-i18n="app.settings"></span>
+          <span class="md3-nav-icon">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </span>
+          <span class="md3-nav-label" data-i18n="app.settings"></span>
         </button>
-      </footer>
+      </nav>
     </div>
   `;
 
@@ -142,11 +153,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const localeLabel = qs<HTMLElement>(root, "#locale-label");
   const localeMenu = qs<HTMLElement>(root, "#locale-menu");
   const themeBtn = qs<HTMLButtonElement>(root, "#theme-btn");
-  const settingsBtn = qs<HTMLButtonElement>(root, "#settings-btn");
+  const navHome = qs<HTMLButtonElement>(root, "#nav-home");
+  const navSettings = qs<HTMLButtonElement>(root, "#nav-settings");
 
   let activeModuleId: string | null = null;
 
-  // 渲染工具卡片墙（MD3 filled card + state layer）
+  // 渲染工具卡片墙（MD3 filled clickable card）
   function renderToolGrid(): void {
     if (tools.length === 0) {
       emptyHint.classList.remove("hidden");
@@ -160,7 +172,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         (m) => `
           <button class="md3-card-clickable text-left" data-module-id="${m.id}">
             <div class="flex items-center gap-3 mb-2">
-              <div class="w-10 h-10 rounded-full bg-secondary text-secondary-content flex items-center justify-center flex-none">
+              <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-none">
                 <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5"></i>
               </div>
               <h3 class="font-medium text-sm truncate flex-1">${t(m.nameKey)}</h3>
@@ -199,21 +211,43 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     createIcons({ icons: ICONS, attrs: { "stroke-width": 2 } });
   }
 
+  function setNav(tab: NavTab): void {
+    navHome.classList.toggle("active", tab === "home");
+    navSettings.classList.toggle("active", tab === "settings");
+  }
+
+  function showHome(): void {
+    deactivateActive();
+    activeModuleId = null;
+    detailView.classList.add("hidden");
+    homeView.classList.remove("hidden");
+    setNav("home");
+    window.scrollTo({ top: 0 });
+  }
+
+  function showSettings(): void {
+    if (!settingsModule) return;
+    homeView.classList.add("hidden");
+    detailView.classList.remove("hidden");
+    activeModuleId = settingsModule.id;
+    detailTitle.textContent = t(settingsModule.nameKey);
+    activateModule(settingsModule.id, container);
+    setNav("settings");
+    window.scrollTo({ top: 0 });
+  }
+
   function enterModule(m: ModuleRegistration): void {
     activeModuleId = m.id;
     detailTitle.textContent = t(m.nameKey);
     homeView.classList.add("hidden");
     detailView.classList.remove("hidden");
     activateModule(m.id, container);
+    setNav("home"); // 工具详情页仍属于"首页"导航
     window.scrollTo({ top: 0 });
   }
 
   function backToHome(): void {
-    deactivateActive();
-    activeModuleId = null;
-    detailView.classList.add("hidden");
-    homeView.classList.remove("hidden");
-    window.scrollTo({ top: 0 });
+    showHome();
   }
 
   renderToolGrid();
@@ -232,10 +266,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   });
 
   backBtn.addEventListener("click", backToHome);
-
-  settingsBtn.addEventListener("click", () => {
-    if (settingsModule) enterModule(settingsModule);
-  });
+  navHome.addEventListener("click", showHome);
+  navSettings.addEventListener("click", showSettings);
 
   localeMenu.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLAnchorElement>(

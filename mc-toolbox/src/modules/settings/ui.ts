@@ -50,8 +50,8 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-3">
-      <!-- 语言：MD3 outlined card -->
-      <div class="md3-card-outlined space-y-3">
+      <!-- 语言：MD3 filled card -->
+      <div class="md3-card-filled space-y-3">
         <div class="flex items-center gap-2">
           <i data-lucide="languages" class="w-5 h-5 text-primary"></i>
           <h3 class="text-base font-medium" data-i18n="modules.settings.language.title"></h3>
@@ -59,8 +59,8 @@ export function createUi(container: HTMLElement): SettingsUi {
         <div class="md3-segmented w-full" id="set-locale-list"></div>
       </div>
 
-      <!-- 主题：MD3 outlined card -->
-      <div class="md3-card-outlined space-y-3">
+      <!-- 主题：MD3 filled card -->
+      <div class="md3-card-filled space-y-3">
         <div class="flex items-center gap-2">
           <i data-lucide="sun-moon" class="w-5 h-5 text-primary"></i>
           <h3 class="text-base font-medium" data-i18n="modules.settings.theme.title"></h3>
@@ -71,8 +71,8 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
       </div>
 
-      <!-- 链接：MD3 outlined card + list items -->
-      <div class="md3-card-outlined !p-0 overflow-hidden">
+      <!-- 链接：MD3 filled card + list items -->
+      <div class="md3-card-filled !p-0 overflow-hidden">
         <div class="flex items-center gap-2 px-4 pt-4">
           <i data-lucide="external-link" class="w-5 h-5 text-primary"></i>
           <h3 class="text-base font-medium" data-i18n="modules.settings.links.title"></h3>
@@ -98,8 +98,8 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
       </div>
 
-      <!-- 关于 + 更新：MD3 outlined card -->
-      <div class="md3-card-outlined space-y-4">
+      <!-- 关于 + 更新：MD3 filled card -->
+      <div class="md3-card-filled space-y-4">
         <div class="flex items-center gap-2">
           <i data-lucide="info" class="w-5 h-5 text-primary"></i>
           <h3 class="text-base font-medium" data-i18n="modules.settings.about.title"></h3>

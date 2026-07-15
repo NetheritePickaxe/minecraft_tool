@@ -24,8 +24,8 @@ export function createUi(container: HTMLElement): MotdUi {
 
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-4">
-      <!-- 查询表单：MD3 outlined card -->
-      <div class="md3-card-outlined space-y-4">
+      <!-- 查询表单：MD3 filled card -->
+      <div class="md3-card-filled space-y-4">
         <!-- MD3 segmented buttons（Java/Bedrock 切换） -->
         <div class="md3-segmented w-full" id="motd-edition">
           <button class="md3-segmented-btn active" data-edition="java" data-i18n="modules.server-motd.edition.java"></button>
@@ -50,10 +50,10 @@ export function createUi(container: HTMLElement): MotdUi {
 
       <!-- 结果区 -->
       <div id="motd-result" class="hidden space-y-4">
-        <!-- 描述卡片：MD3 outlined card -->
-        <div class="md3-card-outlined">
+        <!-- 描述卡片：MD3 filled card -->
+        <div class="md3-card-filled">
           <div class="flex items-start gap-4">
-            <div class="w-14 h-14 rounded-lg bg-base-200 flex items-center justify-center overflow-hidden flex-none">
+            <div class="w-14 h-14 rounded-lg bg-base-300/50 flex items-center justify-center overflow-hidden flex-none">
               <img id="motd-favicon" class="hidden w-full h-full object-contain" alt="favicon" />
             </div>
             <div class="flex-1 min-w-0">
@@ -81,8 +81,8 @@ export function createUi(container: HTMLElement): MotdUi {
           </div>
         </div>
 
-        <!-- 玩家列表：MD3 outlined card -->
-        <div class="md3-card-outlined">
+        <!-- 玩家列表：MD3 filled card -->
+        <div class="md3-card-filled">
           <h3 class="text-sm font-medium mb-3" data-i18n="modules.server-motd.result.player-list"></h3>
           <div id="motd-player-list" class="flex flex-wrap gap-1.5"></div>
         </div>
