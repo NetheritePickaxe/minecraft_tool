@@ -13,9 +13,11 @@ import {
   Home,
   Info,
   Languages,
+  LayoutGrid,
   MessageCircle,
   RefreshCw,
   SatelliteDish,
+  Search,
   Settings,
   Star,
   SunMoon,
@@ -55,9 +57,11 @@ const ICONS = {
   Home,
   Info,
   Languages,
+  LayoutGrid,
   MessageCircle,
   RefreshCw,
   SatelliteDish,
+  Search,
   Settings,
   Star,
   SunMoon,
@@ -77,33 +81,45 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   root.innerHTML = `
     <div class="min-h-screen flex flex-col bg-base-200">
-      <!-- 顶部导航栏：navbar（无阴影，与内容区分层靠背景色差） -->
-      <div class="navbar bg-base-100 sticky top-0 z-30 px-4 gap-2 border-b border-base-300/50">
+      <!-- 顶部导航栏：navbar（白底，左标题 + 右图标按钮） -->
+      <div class="navbar bg-base-100 sticky top-0 z-30 px-4 min-h-14 border-b border-base-200">
         <div class="navbar-start">
-          <h1 class="text-xl font-bold">${t("app.title")}</h1>
+          <h1 class="text-lg font-bold">${t("app.title")}</h1>
         </div>
         <div class="navbar-end gap-1">
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-sm btn-ghost gap-1">
-              <i data-lucide="languages" class="w-4 h-4"></i>
-              <span id="locale-label"></span>
+            <div tabindex="0" role="button" class="btn btn-sm btn-ghost btn-circle" aria-label="language">
+              <i data-lucide="globe" class="w-5 h-5"></i>
             </div>
             <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-40 w-40 p-2 shadow"></ul>
           </div>
           <button id="theme-btn" class="btn btn-sm btn-ghost btn-circle" aria-label="toggle theme">
-            <i data-lucide="sun-moon" class="w-4 h-4"></i>
+            <i data-lucide="sun-moon" class="w-5 h-5"></i>
           </button>
         </div>
       </div>
 
-      <main class="flex-1 pb-20">
+      <main class="flex-1 pb-24">
         <!-- 卡片墙主页 -->
-        <section id="home-view" class="max-w-6xl mx-auto p-4 sm:p-6">
-          <div class="mb-6">
-            <h2 class="text-2xl font-bold" data-i18n="app.home"></h2>
-            <p class="text-sm opacity-60 mt-1" data-i18n="app.tagline"></p>
+        <section id="home-view" class="max-w-2xl mx-auto">
+          <!-- 搜索框：大圆角卡片 -->
+          <div class="px-4 pt-4">
+            <label class="flex items-center gap-3 bg-base-100 rounded-3xl px-5 py-3.5 shadow-sm">
+              <i data-lucide="search" class="w-5 h-5 text-primary opacity-70 shrink-0"></i>
+              <input id="search-input" type="text" class="bg-transparent outline-none flex-1 text-sm placeholder:opacity-50" data-i18n-placeholder="app.search.placeholder" placeholder="${t("app.search.placeholder")}" />
+            </label>
           </div>
-          <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+
+          <!-- 区块标题：图标方块前缀 + 标题 -->
+          <div class="px-4 pt-6 pb-3 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-primary"></i>
+            </span>
+            <h2 class="font-bold text-base" data-i18n="app.featured"></h2>
+          </div>
+
+          <!-- 工具卡片网格：2 列 -->
+          <div id="tool-grid" class="px-4 grid grid-cols-2 gap-3"></div>
           <div id="empty-hint" class="hidden text-center py-20 opacity-50">
             <p data-i18n="app.empty"></p>
           </div>
@@ -111,7 +127,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
         <!-- 工具详情页 -->
         <section id="detail-view" class="hidden">
-          <div class="navbar bg-base-100/80 backdrop-blur sticky top-16 z-20 px-4 min-h-14 border-b border-base-300/50">
+          <div class="navbar bg-base-100/90 backdrop-blur sticky top-14 z-20 px-4 min-h-14 border-b border-base-200">
             <div class="navbar-start">
               <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -122,26 +138,26 @@ export async function mountApp(root: HTMLElement): Promise<void> {
               <span id="detail-title" class="font-semibold"></span>
             </div>
           </div>
-          <div id="module-container" class="max-w-4xl mx-auto p-4 sm:p-6"></div>
+          <div id="module-container" class="max-w-2xl mx-auto p-4"></div>
         </section>
       </main>
 
-      <!-- 底部导航：menu menu-horizontal（水平菜单） -->
-      <footer class="bg-base-100 border-t border-base-300 z-30 sticky bottom-0">
-        <ul class="menu menu-horizontal w-full justify-around items-center p-0 h-14">
-          <li id="nav-home" class="active" data-nav="home">
-            <a class="flex-col gap-0.5 py-1">
+      <!-- 底部导航：自定义 flex，激活态圆形高亮底 -->
+      <footer class="bg-base-100 border-t border-base-200 z-30 sticky bottom-0">
+        <nav class="flex justify-around items-center h-16 max-w-2xl mx-auto">
+          <button id="nav-home" class="flex flex-col items-center gap-0.5 py-1" data-nav="home">
+            <span class="nav-icon w-9 h-9 rounded-full flex items-center justify-center transition-colors">
               <i data-lucide="home" class="w-5 h-5"></i>
-              <span class="text-[10px]" data-i18n="app.home"></span>
-            </a>
-          </li>
-          <li id="nav-settings" data-nav="settings" ${settingsModule ? "" : "class=disabled"}>
-            <a class="flex-col gap-0.5 py-1">
+            </span>
+            <span class="nav-label text-[10px]" data-i18n="app.home"></span>
+          </button>
+          <button id="nav-settings" class="flex flex-col items-center gap-0.5 py-1" data-nav="settings" ${settingsModule ? "" : "disabled"}>
+            <span class="nav-icon w-9 h-9 rounded-full flex items-center justify-center transition-colors">
               <i data-lucide="settings" class="w-5 h-5"></i>
-              <span class="text-[10px]" data-i18n="app.settings"></span>
-            </a>
-          </li>
-        </ul>
+            </span>
+            <span class="nav-label text-[10px]" data-i18n="app.settings"></span>
+          </button>
+        </nav>
       </footer>
     </div>
   `;
@@ -153,36 +169,45 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const container = qs<HTMLElement>(root, "#module-container");
   const detailTitle = qs<HTMLElement>(root, "#detail-title");
   const backBtn = qs<HTMLButtonElement>(root, "#back-btn");
-  const localeLabel = qs<HTMLElement>(root, "#locale-label");
+  const searchInput = qs<HTMLInputElement>(root, "#search-input");
   const localeMenu = qs<HTMLElement>(root, "#locale-menu");
   const themeBtn = qs<HTMLButtonElement>(root, "#theme-btn");
   const navHome = qs<HTMLElement>(root, "#nav-home");
   const navSettings = qs<HTMLElement>(root, "#nav-settings");
 
   let activeModuleId: string | null = null;
+  let searchQuery = "";
 
-  // 渲染工具卡片墙：DaisyUI card + figure(icon 区占主体) + card-body(标题+小描述)
+  // 渲染工具卡片墙：图标方块(软色背景) + 标题 + 副标题(2行省略)
   function renderToolGrid(): void {
-    if (tools.length === 0) {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = q
+      ? tools.filter(
+          (m) =>
+            t(m.nameKey).toLowerCase().includes(q) ||
+            (m.descriptionKey &&
+              t(m.descriptionKey).toLowerCase().includes(q)),
+        )
+      : tools;
+
+    if (filtered.length === 0) {
       emptyHint.classList.remove("hidden");
       toolGrid.classList.add("hidden");
       return;
     }
     emptyHint.classList.add("hidden");
     toolGrid.classList.remove("hidden");
-    toolGrid.innerHTML = tools
+    toolGrid.innerHTML = filtered
       .map(
         (m) => `
-          <button class="card bg-base-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer text-left" data-module-id="${m.id}">
-            <figure class="h-28 bg-primary/10 flex items-center justify-center">
-              <i data-lucide="${m.icon ?? "wrench"}" class="w-10 h-10 text-primary"></i>
-            </figure>
-            <div class="card-body p-3 gap-0.5">
-              <h3 class="card-title text-sm font-semibold leading-tight">${t(m.nameKey)}</h3>
-              <p class="text-[11px] opacity-50 line-clamp-1">${
-                m.descriptionKey ? t(m.descriptionKey) : ""
-              }</p>
-            </div>
+          <button class="card bg-base-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left" data-module-id="${m.id}">
+            <span class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+              <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5 text-primary"></i>
+            </span>
+            <h3 class="font-bold text-sm leading-tight">${t(m.nameKey)}</h3>
+            <p class="text-xs opacity-60 line-clamp-2 mt-1 leading-snug">${
+              m.descriptionKey ? t(m.descriptionKey) : ""
+            }</p>
           </button>
         `,
       )
@@ -192,8 +217,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   function renderLocale(): void {
     const current = getLocale();
-    localeLabel.textContent =
-      LOCALE_OPTIONS.find((o) => o.code === current)?.label ?? current;
     localeMenu.innerHTML = LOCALE_OPTIONS.map(
       (o) =>
         `<li><a class="locale-option ${o.code === current ? "active" : ""}" data-locale="${o.code}">${o.label}</a></li>`,
@@ -204,6 +227,11 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     root.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       el.textContent = t(el.dataset.i18n!);
     });
+    root
+      .querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]")
+      .forEach((el) => {
+        el.placeholder = t(el.dataset.i18nPlaceholder!);
+      });
     if (activeModuleId) {
       const m = modules.find((x) => x.id === activeModuleId);
       if (m) detailTitle.textContent = t(m.nameKey);
@@ -215,8 +243,20 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setNav(tab: NavTab): void {
-    navHome.classList.toggle("active", tab === "home");
-    navSettings.classList.toggle("active", tab === "settings");
+    const apply = (btn: HTMLElement, active: boolean) => {
+      const icon = btn.querySelector<HTMLElement>(".nav-icon");
+      const label = btn.querySelector<HTMLElement>(".nav-label");
+      if (icon) {
+        icon.classList.toggle("bg-primary/15", active);
+        icon.classList.toggle("text-primary", active);
+      }
+      if (label) {
+        label.classList.toggle("text-primary", active);
+        label.classList.toggle("font-medium", active);
+      }
+    };
+    apply(navHome, tab === "home");
+    apply(navSettings, tab === "settings");
   }
 
   function showHome(): void {
@@ -253,6 +293,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   renderLocale();
   refreshStaticText();
   refreshIcons();
+  setNav("home");
 
   toolGrid.addEventListener("click", (e) => {
     const card = (e.target as HTMLElement).closest<HTMLElement>("[data-module-id]");
@@ -276,6 +317,11 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   themeBtn.addEventListener("click", () => {
     toggleMode();
+  });
+
+  searchInput.addEventListener("input", () => {
+    searchQuery = searchInput.value;
+    renderToolGrid();
   });
 
   container.addEventListener("settings:icons-stale", () => {

@@ -6,6 +6,8 @@
   "app.open": "Open",
   "app.empty": "No tools available",
   "app.settings": "Settings",
+  "app.featured": "Featured",
+  "app.search.placeholder": "Search tools…",
   "common.confirm": "OK",
   "common.cancel": "Cancel",
   "common.retry": "Retry",
