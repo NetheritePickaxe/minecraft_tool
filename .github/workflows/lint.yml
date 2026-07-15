@@ -2,11 +2,13 @@ name: Lint
 
 # 代码静态检查：前端 ESLint + Rust fmt/clippy
 # - PR / push main：必须通过才能合并
+# - 手动触发：支持随时运行检查
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 # 项目位于 mc-toolbox 子目录
 defaults:
