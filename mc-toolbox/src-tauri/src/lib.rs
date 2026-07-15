@@ -3,13 +3,13 @@
 
 mod motd;
 
-use motd::{run, MotdError, MotdQuery, MotdResult};
+use motd::{run as run_motd, MotdError, MotdQuery, MotdResult};
 
 /// 查询 Minecraft 服务器 MOTD（Java 版 / 基岩版）
 #[tauri::command]
 async fn query_motd(query: MotdQuery) -> Result<MotdResult, MotdError> {
     // 网络查询为阻塞 IO，放入 Tauri 的异步线程池执行，避免阻塞主线程
-    tauri::async_runtime::spawn_blocking(move || run(query))
+    tauri::async_runtime::spawn_blocking(move || run_motd(query))
         .await
         .map_err(|e| MotdError {
             kind: "unknown".into(),

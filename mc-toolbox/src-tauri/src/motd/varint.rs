@@ -1,7 +1,7 @@
 // Minecraft VarInt 编解码
 // 用于 Java 版 SLP 协议的数据包长度与字段编码
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 
 /// 将 i32 编码为 VarInt 写入缓冲区
 pub fn write_var_int(buf: &mut Vec<u8>, mut value: i32) {
