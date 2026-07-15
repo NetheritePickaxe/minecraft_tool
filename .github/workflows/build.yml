@@ -79,7 +79,8 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          # 裁掉 i686(32位x86，极少见)；保留 aarch64/armv7(真机) + x86_64(模拟器)
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -89,15 +90,36 @@ jobs:
       - name: Init Android project
         run: npm run tauri android init
 
-      # 默认产出 debug 签名 APK（可直接安装测试）。
-      # 如需正式签名发布到应用商店，配置下方 Secrets 后切换为 release 构建：
-      #   1) 生成 keystore: keytool -genkey -v -keystore release.keystore -alias mctoolbox
-      #   2) 仓库 Settings → Secrets 添加:
-      #        ANDROID_KEYSTORE_BASE64 (base64 of .keystore)
-      #        ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD / ANDROID_STORE_PASSWORD
-      #   3) 在 gen/android/app/build.gradle.kts 配置 signingConfig 并改用 `npm run tauri android build -- --apk`
-      - name: Build Android APK
-        run: npm run tauri android build -- --apk --debug
+      # Tauri 生成的 gradle 模板中 release buildType 缺少 signingConfig，
+      # 直接 release 构建会产出无法安装的未签名 APK。
+      # 这里让 release 复用 debug 签名（CI 测试构建可直接安装）。
+      # 正式发布到 Play Store 需替换为真实 keystore，见 README。
+      - name: Patch Gradle release signing
+        run: |
+          python3 - <<'PY'
+          p = "src-tauri/gen/android/app/build.gradle.kts"
+          s = open(p).read()
+          if 'signingConfig = signingConfigs.getByName("debug")' not in s:
+              s = s.replace(
+                  'getByName("release") {',
+                  'getByName("release") {\n            signingConfig = signingConfigs.getByName("debug")',
+                  1,
+              )
+              open(p, "w").write(s)
+              print("patched release signingConfig -> debug")
+          else:
+              print("already patched")
+          PY
+
+      # release 构建 + 按 ABI 拆分。
+      # release 剥离调试符号(Cargo profile.release.strip=true)，
+      # 每个 ABI 的 .so 从 ~100MB(debug) 降到 ~10-20MB(release)；
+      # --split-per-abi 为每个 ABI 产出独立 APK，避免 universal 单包过大。
+      - name: Build Android APK (release, split per ABI)
+        run: npm run tauri android build -- --apk --split-per-abi
+
+      - name: Show APK sizes
+        run: find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

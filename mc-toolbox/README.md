@@ -45,8 +45,10 @@ npm run tauri android dev    # 连接设备/模拟器运行
 - **触发**：推送 `v*` tag，或手动 (workflow_dispatch)
 - **产物**：
   - Windows：`.msi` / `.exe` (NSIS)
-  - Android：`.apk`（默认 debug 签名，可直接安装测试）
+  - Android：每个 ABI 一个 `.apk`（arm64-v8a / armeabi-v7a / x86_64），release 构建，debug 签名可直接安装测试
 - **Release**：tag 触发时自动创建 GitHub Release 并附带所有产物
+
+> Android 体积优化：CI 使用 release 构建（`strip=true` + `lto=true` 剥离调试符号）+ `--split-per-abi`（每个 ABI 独立 APK），单个 APK 约 15-25MB。真机一般选 `arm64-v8a`，模拟器选 `x86_64`。
 
 ```bash
 # 发布新版本（触发 Windows + Android 构建并发布 Release）
@@ -56,7 +58,7 @@ git push origin v0.1.0
 
 ### Android 正式签名（可选）
 
-默认 CI 产出 debug 签名的 APK。如需发布到应用商店，配置以下 Secrets 后修改 `.github/workflows/build.yml` 中的构建步骤：
+默认 CI 让 release 构建复用 debug 签名（仅用于测试安装）。如需发布到 Play Store，需使用真实 keystore：
 
 1. 生成 keystore：
    ```bash
@@ -68,7 +70,7 @@ git push origin v0.1.0
    - `ANDROID_KEY_ALIAS`
    - `ANDROID_KEY_PASSWORD`
    - `ANDROID_STORE_PASSWORD`
-3. 将 `build.yml` 中的构建命令从 `--debug` 改为正式签名构建。
+3. 修改 `.github/workflows/build.yml` 的 Android job：用 `keystore.properties` + gradle `signingConfigs.release` 替换 debug 签名 patch。
 
 ## 项目结构
 
