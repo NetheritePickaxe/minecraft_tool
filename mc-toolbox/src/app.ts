@@ -1,8 +1,5 @@
-// 应用框架：MD3 风格卡片墙主页 + 工具详情页 + 底部 NavigationBar
-// 视觉规范：Material Design 3
-// - Top App Bar（标题 + 语言/主题 icon button）
-// - 卡片墙（filled clickable cards，圆形图标 container）
-// - 底部 NavigationBar（首页 + 设置，带 active indicator pill）
+// 应用框架：卡片墙主页 + 工具详情页 + 底部导航
+// 纯 DaisyUI 组件：navbar / btm-nav / card / dropdown / menu / btn
 
 import {
   createIcons,
@@ -81,63 +78,66 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   root.innerHTML = `
     <div class="min-h-screen flex flex-col bg-base-200">
-      <!-- MD3 Top App Bar -->
-      <header class="md3-appbar">
-        <span class="md3-appbar-title">${t("app.title")}</span>
-        <div class="flex-none gap-1 flex items-center">
+      <!-- 顶部导航栏：navbar -->
+      <div class="navbar bg-base-100 shadow-sm sticky top-0 z-30 px-4 gap-2">
+        <div class="navbar-start">
+          <h1 class="text-xl font-bold">${t("app.title")}</h1>
+        </div>
+        <div class="navbar-end gap-1">
+          <!-- 语言下拉：dropdown + menu -->
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="md3-btn-text md3-btn-sm gap-1">
+            <div tabindex="0" role="button" class="btn btn-sm btn-ghost gap-1">
               <i data-lucide="languages" class="w-4 h-4"></i>
               <span id="locale-label"></span>
             </div>
-            <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-lg z-40 w-40 p-1 shadow-lg border border-base-300"></ul>
+            <ul id="locale-menu" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-40 w-40 p-2 shadow"></ul>
           </div>
-          <button id="theme-btn" class="md3-btn-text md3-btn-sm !px-2" aria-label="toggle theme">
+          <!-- 主题切换 -->
+          <button id="theme-btn" class="btn btn-sm btn-ghost btn-circle" aria-label="toggle theme">
             <i data-lucide="sun-moon" class="w-4 h-4"></i>
           </button>
         </div>
-      </header>
+      </div>
 
-      <main class="flex-1 pb-20">
+      <main class="flex-1 pb-16">
         <!-- 卡片墙主页 -->
         <section id="home-view" class="max-w-6xl mx-auto p-4">
-          <div class="mb-5">
-            <h2 class="text-2xl font-normal tracking-tight" data-i18n="app.home"></h2>
-            <p class="text-sm text-base-content/60 mt-1" data-i18n="app.tagline"></p>
+          <div class="mb-6">
+            <h2 class="text-2xl font-bold" data-i18n="app.home"></h2>
+            <p class="text-sm opacity-60 mt-1" data-i18n="app.tagline"></p>
           </div>
           <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
-          <div id="empty-hint" class="hidden text-center py-20 text-base-content/50">
+          <div id="empty-hint" class="hidden text-center py-20 opacity-50">
             <p data-i18n="app.empty"></p>
           </div>
         </section>
 
         <!-- 工具详情页 -->
         <section id="detail-view" class="hidden">
-          <div class="md3-appbar !h-14 top-16">
-            <button id="back-btn" class="md3-btn-text md3-btn-sm !px-2 gap-1">
-              <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            </button>
-            <span id="detail-title" class="text-lg font-medium flex-1"></span>
+          <div class="navbar bg-base-100 shadow-sm sticky top-16 z-20 px-4 min-h-14">
+            <div class="navbar-start">
+              <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span data-i18n="app.back"></span>
+              </button>
+            </div>
+            <div class="navbar-center">
+              <span id="detail-title" class="font-semibold"></span>
+            </div>
           </div>
           <div id="module-container" class="max-w-4xl mx-auto p-4"></div>
         </section>
       </main>
 
-      <!-- MD3 NavigationBar -->
-      <nav class="md3-nav-bar">
-        <button id="nav-home" class="md3-nav-item active" data-nav="home">
-          <span class="md3-nav-icon">
-            <i data-lucide="home" class="w-5 h-5"></i>
-          </span>
-          <span class="md3-nav-label" data-i18n="app.home"></span>
+      <!-- 底部导航：btm-nav -->
+      <nav class="btm-nav btm-nav-md bg-base-100 border-t border-base-300 z-30">
+        <button id="nav-home" class="active" data-nav="home">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-xs" data-i18n="app.home"></span>
         </button>
-        <button id="nav-settings" class="md3-nav-item" data-nav="settings" ${
-          settingsModule ? "" : "disabled"
-        }>
-          <span class="md3-nav-icon">
-            <i data-lucide="settings" class="w-5 h-5"></i>
-          </span>
-          <span class="md3-nav-label" data-i18n="app.settings"></span>
+        <button id="nav-settings" data-nav="settings" ${settingsModule ? "" : "disabled"}>
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-xs" data-i18n="app.settings"></span>
         </button>
       </nav>
     </div>
@@ -158,7 +158,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   let activeModuleId: string | null = null;
 
-  // 渲染工具卡片墙（MD3 filled clickable card）
+  // 渲染工具卡片墙：card + card-body
   function renderToolGrid(): void {
     if (tools.length === 0) {
       emptyHint.classList.remove("hidden");
@@ -170,16 +170,20 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     toolGrid.innerHTML = tools
       .map(
         (m) => `
-          <button class="md3-card-clickable text-left" data-module-id="${m.id}">
-            <div class="flex items-center gap-3 mb-2">
-              <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-none">
-                <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5"></i>
+          <button class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer text-left" data-module-id="${m.id}">
+            <div class="card-body p-4 gap-2">
+              <div class="flex items-center gap-3">
+                <div class="avatar">
+                  <div class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center">
+                    <i data-lucide="${m.icon ?? "wrench"}" class="w-5 h-5"></i>
+                  </div>
+                </div>
+                <h3 class="card-title text-sm font-semibold flex-1 truncate">${t(m.nameKey)}</h3>
               </div>
-              <h3 class="font-medium text-sm truncate flex-1">${t(m.nameKey)}</h3>
+              <p class="text-xs opacity-60 line-clamp-2">${
+                m.descriptionKey ? t(m.descriptionKey) : ""
+              }</p>
             </div>
-            <p class="text-xs text-base-content/60 line-clamp-2 leading-relaxed">${
-              m.descriptionKey ? t(m.descriptionKey) : ""
-            }</p>
           </button>
         `,
       )
@@ -193,7 +197,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       LOCALE_OPTIONS.find((o) => o.code === current)?.label ?? current;
     localeMenu.innerHTML = LOCALE_OPTIONS.map(
       (o) =>
-        `<li><a class="locale-option rounded-lg ${o.code === current ? "active bg-secondary text-secondary-content" : ""}" data-locale="${o.code}">${o.label}</a></li>`,
+        `<li><a class="locale-option ${o.code === current ? "active" : ""}" data-locale="${o.code}">${o.label}</a></li>`,
     ).join("");
   }
 
@@ -242,12 +246,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     homeView.classList.add("hidden");
     detailView.classList.remove("hidden");
     activateModule(m.id, container);
-    setNav("home"); // 工具详情页仍属于"首页"导航
+    setNav("home");
     window.scrollTo({ top: 0 });
-  }
-
-  function backToHome(): void {
-    showHome();
   }
 
   renderToolGrid();
@@ -256,16 +256,14 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   refreshIcons();
 
   toolGrid.addEventListener("click", (e) => {
-    const card = (e.target as HTMLElement).closest<HTMLElement>(
-      ".md3-card-clickable",
-    );
+    const card = (e.target as HTMLElement).closest<HTMLElement>("[data-module-id]");
     if (!card) return;
     const id = card.dataset.moduleId!;
     const m = tools.find((x) => x.id === id);
     if (m) enterModule(m);
   });
 
-  backBtn.addEventListener("click", backToHome);
+  backBtn.addEventListener("click", showHome);
   navHome.addEventListener("click", showHome);
   navSettings.addEventListener("click", showSettings);
 
