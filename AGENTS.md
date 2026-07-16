@@ -10,7 +10,7 @@
 - **技术栈**：Tauri v2（Rust 后端）+ Vanilla TypeScript + Vite（前端）+ Tailwind CSS + DaisyUI
 - **支持平台**：Web、Windows、Android（三端共用同一套前端代码）
 - **仓库**：`NetheritePickaxe/minecraft_tool`
-- **项目根**：仓库下的 `mc-toolbox/` 子目录
+- **项目根**：仓库根目录
 
 ---
 
@@ -29,26 +29,29 @@
 minecraft_tool/                  # 仓库根
 ├── AGENTS.md                    # 本文件
 ├── .github/workflows/           # CI 工作流（build / lint / deploy-web）
-└── mc-toolbox/                  # 应用代码根
-    ├── src/                     # 前端源码
-    │   ├── main.ts              # 入口：初始化应用、挂载 app.ts
-    │   ├── app.ts               # 应用框架：侧边栏 + 内容区 + 模块路由
-    │   ├── styles.css           # 全局样式（@tailwind 三件套 + DaisyUI 插件）
-    │   ├── core/                # 核心框架（非业务，所有模块共享）
-    │   │   ├── types.ts         # ModuleRegistration 等公共契约
-    │   │   ├── module-loader.ts # 模块注册与加载
-    │   │   └── event-bus.ts     # 跨模块通信
-    │   ├── lang/                # i18n 基础设施 + 语言文件
-    │   │   ├── index.ts         # t() / 语言切换 / 持久化
-    │   │   └── locales/         # 语言 JSON 文件
-    │   │       ├── zh_cn.json
-    │   │       └── en_us.json
-    │   └── modules/             # 各功能模块（见第 4 节）
-    │       └── <module-name>/
-    ├── src-tauri/               # Rust 后端
-    ├── tailwind.config.js       # Tailwind 配置（含 DaisyUI 插件）
-    ├── postcss.config.js        # PostCSS 配置（tailwindcss + autoprefixer）
-    └── ...                      # 其它配置（package.json、vite.config.ts 等）
+├── src/                         # 前端源码
+│   ├── main.ts              # 入口：初始化应用、挂载 app.ts
+│   ├── app.ts               # 应用框架：侧边栏 + 内容区 + 模块路由
+│   ├── styles.css           # 全局样式（@tailwind 三件套 + DaisyUI 插件）
+│   ├── core/                # 核心框架（非业务，所有模块共享）
+│   │   ├── types.ts         # ModuleRegistration 等公共契约
+│   │   ├── module-loader.ts # 模块注册与加载
+│   │   └── event-bus.ts     # 跨模块通信
+│   ├── lang/                # i18n 基础设施 + 语言文件
+│   │   ├── index.ts         # t() / 语言切换 / 持久化
+│   │   └── locales/         # 语言 JSON 文件
+│   │       ├── zh_cn.json
+│   │       └── en_us.json
+│   └── modules/             # 各功能模块（见第 4 节）
+│       └── <module-name>/
+├── src-tauri/               # Rust 后端
+├── eslint.config.js         # ESLint 配置
+├── tailwind.config.js       # Tailwind 配置（含 DaisyUI 插件）
+├── postcss.config.js        # PostCSS 配置（tailwindcss + autoprefixer）
+├── vite.config.ts           # Vite 配置
+├── tsconfig.json            # TypeScript 配置
+├── package.json             # 依赖与脚本
+└── ...                      # 其它配置文件
 ```
 
 ---
@@ -57,7 +60,7 @@ minecraft_tool/                  # 仓库根
 
 ### 4.1 核心原则
 
-**每个工具/功能必须在 `mc-toolbox/src/modules/<module-name>/` 下独立开发**，禁止把多个功能的代码混写进 `main.ts`、`app.ts` 或全局文件。
+**每个工具/功能必须在 `src/modules/<module-name>/` 下独立开发**，禁止把多个功能的代码混写进 `main.ts`、`app.ts` 或全局文件。
 
 ### 4.2 模块目录结构
 
@@ -211,7 +214,7 @@ const label = t('modules.mod-manager.name');
 
 ### 7.1 前端（TypeScript）
 
-- ESLint 9 flat config，配置见 `mc-toolbox/eslint.config.js`
+- ESLint 9 flat config，配置见 `eslint.config.js`
 - 缩进 2 空格，分号可省略（遵循现有文件风格）
 - 提交前运行 `npm run lint`
 
@@ -280,7 +283,7 @@ docs(agents): 更新项目结构规范 [skip ci]
 
 ## 9. 版本与发布
 
-- 版本号统一在 `mc-toolbox/src-tauri/tauri.conf.json` 的 `version` 字段维护
+- 版本号统一在 `src-tauri/tauri.conf.json` 的 `version` 字段维护
 - 打 tag 前先更新该字段，tag 格式 `v<version>`（如 `v0.0.1-dev`）
 - Release 由 `build.yml` 在 tag 推送时自动创建，包含：
   - Windows：`<ProductName>_<version>_x64-setup.exe`、`<ProductName>_<version>_x64.msi`
