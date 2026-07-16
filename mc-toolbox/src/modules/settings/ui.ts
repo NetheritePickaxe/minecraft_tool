@@ -280,7 +280,14 @@ export function createUi(container: HTMLElement): SettingsUi {
       const current = settings[key];
       const valEl = container.querySelector<HTMLElement>(`#set-radius-${key}-val`);
       if (valEl) valEl.textContent = t(`modules.settings.radius.level.${current}`);
-      renderRadiusOptions(key, current);
+      const list = radiusLists[key];
+      if (list.childElementCount === 0) {
+        renderRadiusOptions(key, current);
+      } else {
+        list.querySelectorAll<HTMLInputElement>(".radius-opt").forEach((input) => {
+          input.checked = input.dataset.radiusLevel === current;
+        });
+      }
     });
   }
 
