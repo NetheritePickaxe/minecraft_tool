@@ -57,15 +57,20 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-3">
-      <!-- 语言：collapse -->
-      <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
-        <input type="checkbox" checked />
-        <div class="collapse-title font-medium flex items-center gap-2">
-          <i data-lucide="languages" class="w-4 h-4"></i>
-          <span data-i18n="modules.settings.language.title"></span>
-        </div>
-        <div class="collapse-content">
-          <div class="join w-full mt-2" id="set-locale-list"></div>
+      <!-- 语言：dropdown -->
+      <div class="card bg-base-100 rounded-2xl shadow-sm">
+        <div class="card-body gap-3">
+          <h3 class="card-title text-base gap-2">
+            <i data-lucide="languages" class="w-4 h-4"></i>
+            <span data-i18n="modules.settings.language.title"></span>
+          </h3>
+          <div class="dropdown" id="set-locale-dropdown">
+            <div tabindex="0" role="button" class="btn btn-sm btn-outline gap-2">
+              <span id="selected-locale-label">简体中文</span>
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+            <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg mt-1" id="set-locale-list"></ul>
+          </div>
         </div>
       </div>
 
@@ -154,20 +159,16 @@ export function createUi(container: HTMLElement): SettingsUi {
             <span data-i18n="modules.settings.update.title"></span>
           </h3>
           <div id="set-update-area" class="space-y-3">
-            <div id="set-check-card" class="card bg-primary/10 rounded-2xl cursor-pointer hover:bg-primary/15 transition-colors" role="button" tabindex="0">
-              <div class="card-body py-3 px-4 flex-row items-center gap-3">
-                <i data-lucide="refresh-cw" class="w-5 h-5 text-primary"></i>
-                <span class="flex-1 text-sm font-medium" data-i18n="modules.settings.update.check"></span>
-              </div>
-            </div>
+            <button id="set-check-card" class="btn btn-primary w-full gap-2">
+              <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+              <span data-i18n="modules.settings.update.check"></span>
+            </button>
             <div id="set-update-status" class="text-sm"></div>
             <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-            <div id="set-install-card" class="card bg-success/10 rounded-2xl cursor-pointer hover:bg-success/15 transition-colors hidden" role="button" tabindex="0">
-              <div class="card-body py-3 px-4 flex-row items-center gap-3">
-                <i data-lucide="download" class="w-5 h-5 text-success"></i>
-                <span class="flex-1 text-sm font-medium" data-i18n="modules.settings.update.install"></span>
-              </div>
-            </div>
+            <button id="set-install-card" class="btn btn-success w-full gap-2 hidden">
+              <i data-lucide="download" class="w-5 h-5"></i>
+              <span data-i18n="modules.settings.update.install"></span>
+            </button>
           </div>
         </div>
       </div>`
@@ -205,9 +206,12 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   function renderLocaleList(): void {
     const current = getLocale();
+    const label = qs<HTMLElement>(container, "#selected-locale-label");
+    const opt = LOCALE_OPTIONS.find((o) => o.code === current);
+    label.textContent = opt?.label ?? "简体中文";
     localeList.innerHTML = LOCALE_OPTIONS.map(
       (o) =>
-        `<button class="btn btn-sm join-item flex-1 ${o.code === current ? "btn-active btn-primary" : ""}" data-locale="${o.code}">${o.label}</button>`,
+        `<li${o.code === current ? ' class="bordered"' : ""}><a data-locale="${o.code}">${o.label}</a></li>`,
     ).join("");
   }
 
@@ -239,8 +243,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     installBtn?.classList.add("hidden");
     progressBar?.classList.add("hidden");
     const enableCheck = (on: boolean): void => {
-      checkBtn.classList.toggle("pointer-events-none", !on);
-      checkBtn.classList.toggle("opacity-50", !on);
+      checkBtn.classList.toggle("btn-disabled", !on);
     };
 
     switch (s.kind) {
@@ -320,11 +323,14 @@ export function createUi(container: HTMLElement): SettingsUi {
   // ============== 事件处理 ==============
 
   localeList.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+    const item = (e.target as HTMLElement).closest<HTMLElement>(
       "[data-locale]",
     );
-    if (!btn) return;
-    setLocale(btn.dataset.locale as LocaleCode);
+    if (!item) return;
+    setLocale(item.dataset.locale as LocaleCode);
+    // 关闭下拉
+    const trigger = container.querySelector<HTMLElement>("#set-locale-dropdown [role='button']");
+    trigger?.blur();
   });
 
   // 主题选择（点击左侧色块或整行）

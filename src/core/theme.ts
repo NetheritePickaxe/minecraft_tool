@@ -35,10 +35,7 @@ export type Theme =
   | "winter"
   | "dim"
   | "nord"
-  | "sunset"
-  | "caramellatte"
-  | "abyss"
-  | "silk";
+  | "sunset";
 
 export const THEMES: Theme[] = [
   "light",
@@ -73,9 +70,6 @@ export const THEMES: Theme[] = [
   "dim",
   "nord",
   "sunset",
-  "caramellatte",
-  "abyss",
-  "silk",
 ];
 
 /** 主题对应的中文名 i18n 键 */
@@ -112,9 +106,6 @@ export const THEME_NAME_KEY: Record<Theme, string> = {
   dim: "modules.settings.theme.name.dim",
   nord: "modules.settings.theme.name.nord",
   sunset: "modules.settings.theme.name.sunset",
-  caramellatte: "modules.settings.theme.name.caramellatte",
-  abyss: "modules.settings.theme.name.abyss",
-  silk: "modules.settings.theme.name.silk",
 };
 
 const THEME_KEY = "mc-toolbox.theme";

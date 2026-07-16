@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Check,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
   Download,
   ExternalLink,
@@ -41,6 +42,7 @@ const ICONS = {
   ArrowUpCircle,
   Check,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
   Download,
   ExternalLink,
@@ -84,13 +86,13 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       <!-- 顶部导航栏：navbar（白底，仅标题） -->
       <div class="navbar bg-base-100 sticky top-0 z-30 px-4 min-h-14 border-b border-base-200">
         <div class="navbar-start">
-          <h1 class="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">${t("app.title")}</h1>
+          <h1 class="text-xl font-extrabold text-base-content">${t("app.title")}</h1>
         </div>
       </div>
 
-      <main class="flex-1 pb-24">
+      <main class="flex-1 pb-16">
         <!-- 搜索框：全局共享，home/category 视图都显示 -->
-        <div class="px-4 pt-4 max-w-2xl mx-auto">
+        <div id="search-wrapper" class="px-4 pt-4 max-w-2xl mx-auto">
           <label class="flex items-center gap-3 bg-base-100 rounded-2xl px-5 py-3.5 shadow-sm">
             <i data-lucide="search" class="w-5 h-5 text-primary opacity-70 shrink-0"></i>
             <input id="search-input" type="text" class="bg-transparent outline-none flex-1 text-sm placeholder:opacity-50" data-i18n-placeholder="app.search.placeholder" placeholder="${t("app.search.placeholder")}" />
@@ -144,17 +146,17 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：MD3 Navigation Bar 风格 -->
-      <div class="fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-200 px-6 pt-2 pb-3 flex justify-around gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button id="nav-home" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors bg-primary/10 text-primary" data-nav="home">
-          <i data-lucide="home" class="w-6 h-6"></i>
-          <span class="text-xs font-medium" data-i18n="app.home"></span>
+      <!-- 底部导航：DaisyUI btm-nav，未激活仅图标，激活浮现文字 -->
+      <div class="btm-nav fixed bottom-0 z-30 border-t border-base-200">
+        <button id="nav-home" class="text-primary border-primary" data-nav="home">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-[10px] font-medium" data-i18n="app.home"></span>
         </button>
         ${
           settingsModule
-            ? `<button id="nav-settings" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors text-base-content/70 hover:bg-base-200" data-nav="settings">
-          <i data-lucide="settings" class="w-6 h-6"></i>
-          <span class="text-xs font-medium" data-i18n="app.settings"></span>
+            ? `<button id="nav-settings" class="text-base-content/50" data-nav="settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-[10px] font-medium" data-i18n="app.settings"></span>
         </button>`
             : ""
         }
@@ -175,6 +177,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const toolsHeaderIcon = qs<HTMLButtonElement>(root, "#tools-header-icon");
   const toolsHeaderText = qs<HTMLButtonElement>(root, "#tools-header-text");
   const searchInput = qs<HTMLInputElement>(root, "#search-input");
+  const searchWrapper = qs<HTMLElement>(root, "#search-wrapper");
   const navHome = qs<HTMLElement>(root, "#nav-home");
   const navSettings = root.querySelector<HTMLElement>("#nav-settings");
 
@@ -238,19 +241,24 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setNav(tab: NavTab): void {
-    const activeClass = ["bg-primary/10", "text-primary"];
-    const inactiveClass = ["text-base-content/70", "hover:bg-base-200"];
-    const apply = (btn: HTMLElement, active: boolean) => {
-      btn.classList.remove(...(active ? inactiveClass : activeClass));
-      btn.classList.add(...(active ? activeClass : inactiveClass));
+    const activate = (btn: HTMLElement, active: boolean) => {
+      btn.classList.toggle("active", active);
+      if (active) {
+        btn.classList.add("text-primary", "border-primary");
+        btn.classList.remove("text-base-content/50");
+      } else {
+        btn.classList.remove("text-primary", "border-primary");
+        btn.classList.add("text-base-content/50");
+      }
     };
-    apply(navHome, tab === "home");
-    if (navSettings) apply(navSettings, tab === "settings");
+    activate(navHome, tab === "home");
+    if (navSettings) activate(navSettings, tab === "settings");
   }
 
   function showHome(): void {
     deactivateActive();
     activeModuleId = null;
+    searchWrapper.classList.remove("hidden");
     detailView.classList.add("hidden");
     categoryView.classList.remove("scale-100", "opacity-100");
     categoryView.classList.add("scale-95", "opacity-0");
@@ -263,6 +271,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function showCategoryView(): void {
+    searchWrapper.classList.remove("hidden");
     homeView.classList.add("hidden");
     detailView.classList.add("hidden");
     categoryView.classList.remove("hidden");
@@ -332,6 +341,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   function showSettings(): void {
     if (!settingsModule) return;
+    searchWrapper.classList.add("hidden");
     homeView.classList.add("hidden");
     categoryView.classList.add("hidden");
     categoryView.classList.remove("scale-100", "opacity-100");
@@ -347,6 +357,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   function enterModule(m: ModuleRegistration): void {
     activeModuleId = m.id;
     detailTitle.textContent = t(m.nameKey);
+    searchWrapper.classList.add("hidden");
     homeView.classList.add("hidden");
     categoryView.classList.add("hidden");
     categoryView.classList.remove("scale-100", "opacity-100");
