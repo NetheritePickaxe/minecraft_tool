@@ -14,6 +14,7 @@ import {
   applyRadiusLevel,
   onRadiusChange,
   RADIUS_LEVELS,
+  RADIUS_VALUE,
   type RadiusKey,
   type RadiusLevel,
 } from "../../core/theme";
@@ -84,7 +85,7 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
         <div class="collapse-content">
           <!-- 主题选择：DaisyUI 官网风格主题预览卡片网格 -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2" id="set-theme-list"></div>
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
@@ -96,55 +97,29 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span data-i18n="modules.settings.radius.title"></span>
         </div>
         <div class="collapse-content">
-          <!-- Box 圆角预览 + 选择 -->
+          <!-- Box 圆角：参考 DaisyUI 官网 Radius 卡片风格 -->
           <div class="mt-3" data-radius-group="box">
             <div class="flex items-center justify-between mb-1.5">
               <span class="text-sm opacity-70" data-i18n="modules.settings.radius.box"></span>
               <span class="badge badge-sm badge-ghost" id="set-radius-box-val"></span>
             </div>
-            <div class="join w-full mb-1">
-              <input type="radio" name="radius-box" value="none" class="btn btn-xs join-item flex-1 radius-opt" aria-label="0" data-radius-key="box" data-radius-level="none" />
-              <input type="radio" name="radius-box" value="sm" class="btn btn-xs join-item flex-1 radius-opt" aria-label="S" data-radius-key="box" data-radius-level="sm" />
-              <input type="radio" name="radius-box" value="md" class="btn btn-xs join-item flex-1 radius-opt" aria-label="M" data-radius-key="box" data-radius-level="md" />
-              <input type="radio" name="radius-box" value="lg" class="btn btn-xs join-item flex-1 radius-opt" aria-label="L" data-radius-key="box" data-radius-level="lg" />
-            </div>
-            <div class="bg-base-200 p-3 flex justify-center">
-              <div class="w-12 h-8 bg-primary/20 border border-primary/40 rounded-box" data-radius-preview="box"></div>
-            </div>
+            <div class="grid grid-cols-5 gap-2" id="set-radius-box-list"></div>
           </div>
-          <!-- Field 圆角预览 + 选择 -->
+          <!-- Field 圆角 -->
           <div class="mt-3" data-radius-group="field">
             <div class="flex items-center justify-between mb-1.5">
               <span class="text-sm opacity-70" data-i18n="modules.settings.radius.field"></span>
               <span class="badge badge-sm badge-ghost" id="set-radius-field-val"></span>
             </div>
-            <div class="join w-full mb-1">
-              <input type="radio" name="radius-field" value="none" class="btn btn-xs join-item flex-1 radius-opt" aria-label="0" data-radius-key="field" data-radius-level="none" />
-              <input type="radio" name="radius-field" value="sm" class="btn btn-xs join-item flex-1 radius-opt" aria-label="S" data-radius-key="field" data-radius-level="sm" />
-              <input type="radio" name="radius-field" value="md" class="btn btn-xs join-item flex-1 radius-opt" aria-label="M" data-radius-key="field" data-radius-level="md" />
-              <input type="radio" name="radius-field" value="lg" class="btn btn-xs join-item flex-1 radius-opt" aria-label="L" data-radius-key="field" data-radius-level="lg" />
-            </div>
-            <div class="bg-base-200 p-3 flex justify-center">
-              <input type="text" class="input input-bordered w-24 rounded-field" data-radius-preview="field" placeholder="A" />
-            </div>
+            <div class="grid grid-cols-5 gap-2" id="set-radius-field-list"></div>
           </div>
-          <!-- Selector 圆角预览 + 选择 -->
+          <!-- Selector 圆角 -->
           <div class="mt-3" data-radius-group="selector">
             <div class="flex items-center justify-between mb-1.5">
               <span class="text-sm opacity-70" data-i18n="modules.settings.radius.selector"></span>
               <span class="badge badge-sm badge-ghost" id="set-radius-selector-val"></span>
             </div>
-            <div class="join w-full mb-1">
-              <input type="radio" name="radius-selector" value="none" class="btn btn-xs join-item flex-1 radius-opt" aria-label="0" data-radius-key="selector" data-radius-level="none" />
-              <input type="radio" name="radius-selector" value="sm" class="btn btn-xs join-item flex-1 radius-opt" aria-label="S" data-radius-key="selector" data-radius-level="sm" />
-              <input type="radio" name="radius-selector" value="md" class="btn btn-xs join-item flex-1 radius-opt" aria-label="M" data-radius-key="selector" data-radius-level="md" />
-              <input type="radio" name="radius-selector" value="lg" class="btn btn-xs join-item flex-1 radius-opt" aria-label="L" data-radius-key="selector" data-radius-level="lg" />
-            </div>
-            <div class="bg-base-200 p-3 flex justify-center gap-2">
-              <input type="checkbox" class="checkbox checkbox-primary rounded-selector" data-radius-preview="selector" checked />
-              <input type="radio" name="radius-preview-radio" class="radio radio-primary rounded-selector" data-radius-preview="selector" checked />
-              <input type="checkbox" class="toggle toggle-primary rounded-selector" data-radius-preview="selector" checked />
-            </div>
+            <div class="grid grid-cols-5 gap-2" id="set-radius-selector-list"></div>
           </div>
         </div>
       </div>
@@ -245,6 +220,11 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   const localeList = qs<HTMLElement>(container, "#set-locale-list");
   const themeList = qs<HTMLElement>(container, "#set-theme-list");
+  const radiusLists: Record<RadiusKey, HTMLElement> = {
+    box: qs<HTMLElement>(container, "#set-radius-box-list"),
+    field: qs<HTMLElement>(container, "#set-radius-field-list"),
+    selector: qs<HTMLElement>(container, "#set-radius-selector-list"),
+  };
   const versionEl = container.querySelector<HTMLElement>("#set-version");
   const platformEl = container.querySelector<HTMLElement>("#set-platform");
   const checkBtn = container.querySelector<HTMLElement>("#set-check-card");
@@ -288,14 +268,14 @@ export function createUi(container: HTMLElement): SettingsUi {
           <label class="cursor-pointer" data-theme-set="${name}">
             <input type="radio" name="theme-radio" value="${name}" class="peer sr-only" ${checked ? "checked" : ""} />
             <div class="peer-checked:outline-base-content overflow-hidden rounded-box border border-base-content/20 hover:border-base-content/40 outline-2 outline-offset-2 outline-transparent" data-theme="${name}">
-              <div class="bg-base-100 text-base-content flex flex-col items-center p-3 gap-2">
-                <div class="flex gap-1.5">
-                  <div class="bg-primary w-6 h-6 rounded"></div>
-                  <div class="bg-secondary w-6 h-6 rounded"></div>
-                  <div class="bg-accent w-6 h-6 rounded"></div>
-                  <div class="bg-neutral w-6 h-6 rounded"></div>
+              <div class="bg-base-100 text-base-content flex flex-col items-center p-2 gap-1.5">
+                <div class="flex gap-1">
+                  <div class="bg-primary w-5 h-5 rounded-lg"></div>
+                  <div class="bg-secondary w-5 h-5 rounded-lg"></div>
+                  <div class="bg-accent w-5 h-5 rounded-lg"></div>
+                  <div class="bg-neutral w-5 h-5 rounded-lg"></div>
                 </div>
-                <div class="font-bold text-sm truncate">${t(THEME_NAME_KEY[name])}</div>
+                <div class="font-bold text-xs truncate">${t(THEME_NAME_KEY[name])}</div>
               </div>
             </div>
           </label>`;
@@ -309,14 +289,25 @@ export function createUi(container: HTMLElement): SettingsUi {
       const current = settings[key];
       const valEl = container.querySelector<HTMLElement>(`#set-radius-${key}-val`);
       if (valEl) valEl.textContent = t(`modules.settings.radius.level.${current}`);
-      container
-        .querySelectorAll<HTMLInputElement>(
-          `.radius-opt[data-radius-key="${key}"]`,
-        )
-        .forEach((input) => {
-          input.checked = input.dataset.radiusLevel === current;
-        });
+      renderRadiusOptions(key, current);
     });
+  }
+
+  function renderRadiusOptions(key: RadiusKey, current: RadiusLevel): void {
+    const list = radiusLists[key];
+    list.innerHTML = RADIUS_LEVELS.map(
+      (level) => {
+        const checked = level === current;
+        const value = RADIUS_VALUE[level];
+        return `
+          <label class="cursor-pointer">
+            <input type="radio" name="radius-${key}" value="${level}" class="peer sr-only radius-opt" data-radius-key="${key}" data-radius-level="${level}" ${checked ? "checked" : ""} />
+            <div class="bg-base-200 rounded-box p-2 flex items-center justify-center aspect-square transition-all">
+              <div class="w-full h-full bg-base-300 border-2 border-base-300 transition-all peer-checked:border-primary peer-checked:bg-base-100" style="border-top-right-radius: ${value};"></div>
+            </div>
+          </label>`;
+      },
+    ).join("");
   }
 
   function renderUpdateStatus(): void {

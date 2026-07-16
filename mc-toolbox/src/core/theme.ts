@@ -163,18 +163,19 @@ export function onThemeChange(cb: ThemeChangeCallback): () => void {
 
 // ============== 圆角定制（参考 DaisyUI --radius-* 变量） ==============
 
-export type RadiusLevel = "none" | "sm" | "md" | "lg";
+export type RadiusLevel = "none" | "sm" | "md" | "lg" | "xl";
 
 /** 三类圆角，对应 DaisyUI 的 --radius-box / --radius-field / --radius-selector */
 export type RadiusKey = "box" | "field" | "selector";
 
-export const RADIUS_LEVELS: RadiusLevel[] = ["none", "sm", "md", "lg"];
+export const RADIUS_LEVELS: RadiusLevel[] = ["none", "sm", "md", "lg", "xl"];
 
-const RADIUS_VALUE: Record<RadiusLevel, string> = {
+export const RADIUS_VALUE: Record<RadiusLevel, string> = {
   none: "0",
   sm: "0.25rem",
   md: "0.5rem",
   lg: "1rem",
+  xl: "2rem",
 };
 
 const RADIUS_CSS_VAR: Record<RadiusKey, string> = {

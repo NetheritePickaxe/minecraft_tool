@@ -86,6 +86,7 @@
   "modules.settings.radius.level.sm": "Small",
   "modules.settings.radius.level.md": "Medium",
   "modules.settings.radius.level.lg": "Large",
+  "modules.settings.radius.level.xl": "Max",
   "modules.settings.links.title": "Links",
   "modules.settings.links.repo": "GitHub Repository",
   "modules.settings.links.issues": "Report an Issue",

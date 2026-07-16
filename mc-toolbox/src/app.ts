@@ -147,22 +147,20 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：DaisyUI join 图标+文字按钮组 -->
-      <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30">
-        <div class="join shadow-lg">
-          <button id="nav-home" class="btn join-item btn-active gap-2" data-nav="home">
-            <i data-lucide="home" class="w-4 h-4"></i>
-            <span data-i18n="app.home"></span>
-          </button>
-          ${
-            settingsModule
-              ? `<button id="nav-settings" class="btn join-item gap-2" data-nav="settings">
-            <i data-lucide="settings" class="w-4 h-4"></i>
-            <span data-i18n="app.settings"></span>
-          </button>`
-              : ""
-          }
-        </div>
+      <!-- 底部导航：MD3 Navigation Bar 风格 -->
+      <div class="fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-200 px-6 pt-2 pb-3 flex justify-center gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button id="nav-home" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors bg-primary/10 text-primary" data-nav="home">
+          <i data-lucide="home" class="w-6 h-6"></i>
+          <span class="text-xs font-medium" data-i18n="app.home"></span>
+        </button>
+        ${
+          settingsModule
+            ? `<button id="nav-settings" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors text-base-content/70 hover:bg-base-200" data-nav="settings">
+          <i data-lucide="settings" class="w-6 h-6"></i>
+          <span class="text-xs font-medium" data-i18n="app.settings"></span>
+        </button>`
+            : ""
+        }
       </div>
     </div>
   `;
@@ -243,8 +241,14 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setNav(tab: NavTab): void {
-    navHome.classList.toggle("btn-active", tab === "home");
-    navSettings?.classList.toggle("btn-active", tab === "settings");
+    const activeClass = ["bg-primary/10", "text-primary"];
+    const inactiveClass = ["text-base-content/70", "hover:bg-base-200"];
+    const apply = (btn: HTMLElement, active: boolean) => {
+      btn.classList.remove(...(active ? inactiveClass : activeClass));
+      btn.classList.add(...(active ? activeClass : inactiveClass));
+    };
+    apply(navHome, tab === "home");
+    if (navSettings) apply(navSettings, tab === "settings");
   }
 
   function showHome(): void {
