@@ -10,6 +10,12 @@ import {
   THEMES,
   THEME_NAME_KEY,
   type Theme,
+  getRadius,
+  applyRadiusLevel,
+  onRadiusChange,
+  RADIUS_LEVELS,
+  type RadiusKey,
+  type RadiusLevel,
 } from "../../core/theme";
 import {
   detectPlatform,
@@ -79,6 +85,67 @@ export function createUi(container: HTMLElement): SettingsUi {
         <div class="collapse-content">
           <!-- 主题选择：每个预览按钮用局部 data-theme 显示该主题真实颜色 -->
           <div class="grid grid-cols-3 gap-2 mt-2" id="set-theme-list"></div>
+        </div>
+      </div>
+
+      <!-- 圆角定制：collapse（参考 DaisyUI --radius-box/field/selector） -->
+      <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
+        <input type="checkbox" />
+        <div class="collapse-title font-medium flex items-center gap-2">
+          <i data-lucide="rounded-box" class="w-4 h-4"></i>
+          <span data-i18n="modules.settings.radius.title"></span>
+        </div>
+        <div class="collapse-content">
+          <!-- Box 圆角预览 + 选择 -->
+          <div class="mt-3" data-radius-group="box">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm opacity-70" data-i18n="modules.settings.radius.box"></span>
+              <span class="badge badge-sm badge-ghost" id="set-radius-box-val"></span>
+            </div>
+            <div class="join w-full mb-1">
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="none">0</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="sm">S</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="md">M</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="lg">L</button>
+            </div>
+            <div class="bg-base-200 p-3 flex justify-center">
+              <div class="w-12 h-8 bg-primary/20 border border-primary/40 rounded-box" data-radius-preview="box"></div>
+            </div>
+          </div>
+          <!-- Field 圆角预览 + 选择 -->
+          <div class="mt-3" data-radius-group="field">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm opacity-70" data-i18n="modules.settings.radius.field"></span>
+              <span class="badge badge-sm badge-ghost" id="set-radius-field-val"></span>
+            </div>
+            <div class="join w-full mb-1">
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="none">0</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="sm">S</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="md">M</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="lg">L</button>
+            </div>
+            <div class="bg-base-200 p-3 flex justify-center">
+              <input type="text" class="input input-bordered w-24 rounded-field" data-radius-preview="field" placeholder="A" />
+            </div>
+          </div>
+          <!-- Selector 圆角预览 + 选择 -->
+          <div class="mt-3" data-radius-group="selector">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm opacity-70" data-i18n="modules.settings.radius.selector"></span>
+              <span class="badge badge-sm badge-ghost" id="set-radius-selector-val"></span>
+            </div>
+            <div class="join w-full mb-1">
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="none">0</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="sm">S</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="md">M</button>
+              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="lg">L</button>
+            </div>
+            <div class="bg-base-200 p-3 flex justify-center gap-2">
+              <input type="checkbox" class="checkbox checkbox-primary rounded-selector" data-radius-preview="selector" checked />
+              <input type="radio" name="radius-preview-radio" class="radio radio-primary rounded-selector" data-radius-preview="selector" checked />
+              <input type="checkbox" class="toggle toggle-primary rounded-selector" data-radius-preview="selector" checked />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -192,6 +259,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     });
     renderLocaleList();
     renderThemeButtons();
+    renderRadius();
     if (platformEl) platformEl.textContent = platformLabel(platform);
     if (versionEl) versionEl.textContent = version;
     renderUpdateStatus();
@@ -226,6 +294,24 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span class="text-xs">${t(THEME_NAME_KEY[name])}</span>
         </button>`,
     ).join("");
+  }
+
+  function renderRadius(): void {
+    const settings = getRadius();
+    (["box", "field", "selector"] as RadiusKey[]).forEach((key) => {
+      const current = settings[key];
+      const valEl = container.querySelector<HTMLElement>(`#set-radius-${key}-val`);
+      if (valEl) valEl.textContent = t(`modules.settings.radius.level.${current}`);
+      container
+        .querySelectorAll<HTMLButtonElement>(
+          `.radius-opt[data-radius-key="${key}"]`,
+        )
+        .forEach((btn) => {
+          const active = btn.dataset.radiusLevel === current;
+          btn.classList.toggle("btn-active", active);
+          btn.classList.toggle("btn-primary", active);
+        });
+    });
   }
 
   function renderUpdateStatus(): void {
@@ -455,6 +541,21 @@ export function createUi(container: HTMLElement): SettingsUi {
   });
   const offLocale = onLocaleChange(() => refresh());
 
+  // 圆角选项点击（事件委托）
+  const onRadiusClick = (e: Event): void => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+      ".radius-opt",
+    );
+    if (!btn) return;
+    const key = btn.dataset.radiusKey as RadiusKey;
+    const level = btn.dataset.radiusLevel as RadiusLevel;
+    if (!key || !level || !RADIUS_LEVELS.includes(level)) return;
+    applyRadiusLevel(key, level);
+  };
+  container.addEventListener("click", onRadiusClick);
+  // 圆角变化时刷新激活态（预览元素靠 CSS 变量自动生效）
+  const offRadius = onRadiusChange(() => renderRadius());
+
   void loadVersion();
   refresh();
 
@@ -463,6 +564,8 @@ export function createUi(container: HTMLElement): SettingsUi {
     destroy() {
       offTheme();
       offLocale();
+      offRadius();
+      container.removeEventListener("click", onRadiusClick);
     },
   };
 }

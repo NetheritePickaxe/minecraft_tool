@@ -2,6 +2,10 @@
 // - 通过 <html data-theme="..."> 切换
 // - 持久化到 localStorage
 // - 顶栏按钮在 light/dark 间快速切换；设置页可选择全部主题
+//
+// 圆角定制（参考 DaisyUI 主题的 --radius-box/field/selector）：
+// - 通过覆盖 <html> 的 CSS 变量实时生效
+// - 三档：none (0) / sm (0.25rem) / md (0.5rem) / lg (1rem)
 
 export type Theme =
   | "light"
@@ -145,13 +149,87 @@ export function toggleMode(): Theme {
   return next;
 }
 
-/** 初始化时根据 localStorage + 系统偏好应用主题 */
+/** 初始化时根据 localStorage + 系统偏好应用主题与圆角 */
 export function resolveAndApply(): void {
   applyTheme(getTheme());
+  applyRadius(getRadius());
 }
 
 /** 订阅主题变化，返回取消订阅函数 */
 export function onThemeChange(cb: ThemeChangeCallback): () => void {
   listeners.add(cb);
   return () => listeners.delete(cb);
+}
+
+// ============== 圆角定制（参考 DaisyUI --radius-* 变量） ==============
+
+export type RadiusLevel = "none" | "sm" | "md" | "lg";
+
+/** 三类圆角，对应 DaisyUI 的 --radius-box / --radius-field / --radius-selector */
+export type RadiusKey = "box" | "field" | "selector";
+
+export const RADIUS_LEVELS: RadiusLevel[] = ["none", "sm", "md", "lg"];
+
+const RADIUS_VALUE: Record<RadiusLevel, string> = {
+  none: "0",
+  sm: "0.25rem",
+  md: "0.5rem",
+  lg: "1rem",
+};
+
+const RADIUS_CSS_VAR: Record<RadiusKey, string> = {
+  box: "--radius-box",
+  field: "--radius-field",
+  selector: "--radius-selector",
+};
+
+const RADIUS_KEY = "mc-toolbox.radius";
+
+type RadiusSettings = Record<RadiusKey, RadiusLevel>;
+
+type RadiusChangeCallback = (settings: RadiusSettings) => void;
+const radiusListeners = new Set<RadiusChangeCallback>();
+
+/** 读取圆角设置（缺省时按 md/md/sm 给一个温和默认值） */
+export function getRadius(): RadiusSettings {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(RADIUS_KEY) ?? "",
+    ) as Partial<RadiusSettings>;
+    return {
+      box: validLevel(saved.box, "md"),
+      field: validLevel(saved.field, "md"),
+      selector: validLevel(saved.selector, "sm"),
+    };
+  } catch {
+    return { box: "md", field: "md", selector: "sm" };
+  }
+}
+
+function validLevel(v: unknown, fallback: RadiusLevel): RadiusLevel {
+  return v && RADIUS_LEVELS.includes(v as RadiusLevel)
+    ? (v as RadiusLevel)
+    : fallback;
+}
+
+/** 应用圆角设置到 <html> CSS 变量并持久化 */
+export function applyRadius(settings: RadiusSettings): void {
+  const el = document.documentElement;
+  (Object.keys(settings) as RadiusKey[]).forEach((key) => {
+    el.style.setProperty(RADIUS_CSS_VAR[key], RADIUS_VALUE[settings[key]]);
+  });
+  localStorage.setItem(RADIUS_KEY, JSON.stringify(settings));
+  for (const cb of radiusListeners) cb(settings);
+}
+
+/** 设置某一类圆角 */
+export function applyRadiusLevel(key: RadiusKey, level: RadiusLevel): void {
+  const next = { ...getRadius(), [key]: level };
+  applyRadius(next);
+}
+
+/** 订阅圆角变化 */
+export function onRadiusChange(cb: RadiusChangeCallback): () => void {
+  radiusListeners.add(cb);
+  return () => radiusListeners.delete(cb);
 }
