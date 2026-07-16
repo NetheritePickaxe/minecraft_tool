@@ -217,16 +217,15 @@ export function createUi(container: HTMLElement): SettingsUi {
       (name) => {
         const checked = name === current;
         return `
-          <label class="flex items-center gap-3 p-2 rounded-box cursor-pointer transition-colors" data-theme-set="${name}">
-            <input type="radio" name="theme-radio" value="${name}" class="radio radio-primary shrink-0" ${checked ? "checked" : ""} />
-            <span class="flex-1 text-sm">${t(THEME_NAME_KEY[name])}</span>
-            <div class="flex gap-1" data-theme="${name}">
-              <span class="w-5 h-5 rounded bg-primary"></span>
-              <span class="w-5 h-5 rounded bg-secondary"></span>
-              <span class="w-5 h-5 rounded bg-accent"></span>
-              <span class="w-5 h-5 rounded bg-neutral"></span>
+          <button class="flex items-center gap-3 p-2 rounded-box cursor-pointer transition-colors w-full text-left ${checked ? "ring-2 ring-primary bg-primary/5" : "hover:bg-base-200"}" data-theme-set="${name}">
+            <div class="grid grid-cols-2 gap-1 w-12 h-12 shrink-0" data-theme="${name}">
+              <span class="rounded-sm bg-primary"></span>
+              <span class="rounded-sm bg-secondary"></span>
+              <span class="rounded-sm bg-accent"></span>
+              <span class="rounded-sm bg-neutral"></span>
             </div>
-          </label>`;
+            <span class="flex-1 text-sm font-medium">${t(THEME_NAME_KEY[name])}</span>
+          </button>`;
       },
     ).join("");
   }
@@ -326,13 +325,13 @@ export function createUi(container: HTMLElement): SettingsUi {
     setLocale(btn.dataset.locale as LocaleCode);
   });
 
-  // 主题选择（动态渲染，事件委托）
-  themeList.addEventListener("change", (e) => {
-    const radio = (e.target as HTMLElement).closest<HTMLInputElement>(
-      "input[name=\"theme-radio\"]",
+  // 主题选择（点击左侧色块或整行）
+  themeList.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+      "[data-theme-set]",
     );
-    if (!radio) return;
-    applyTheme(radio.value as Theme);
+    if (!btn) return;
+    applyTheme(btn.dataset.themeSet as Theme);
   });
 
   container.addEventListener("click", async (e) => {
