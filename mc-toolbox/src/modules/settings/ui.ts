@@ -215,15 +215,16 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
       (name) => `
-        <button class="text-left rounded-2xl p-2.5 border ${name === current ? "border-primary ring-2 ring-primary" : "border-base-300 hover:border-primary/40"} transition-colors bg-base-100 flex flex-col gap-2" data-theme-set="${name}">
-          <!-- 四色方块 logo（参考微软四象限），局部 data-theme 显示该主题真实颜色 -->
-          <div data-theme="${name}" class="grid grid-cols-2 gap-1 w-9 h-9 shrink-0">
-            <span class="bg-primary rounded-md"></span>
-            <span class="bg-secondary rounded-md"></span>
-            <span class="bg-accent rounded-md"></span>
-            <span class="bg-neutral rounded-md"></span>
+        <button class="aspect-square rounded-2xl overflow-hidden border ${name === current ? "border-primary ring-2 ring-primary" : "border-base-300 hover:border-primary/40"} transition-colors relative" data-theme-set="${name}" data-theme="${name}">
+          <!-- 四色方块铺满卡片（参考微软四象限），局部 data-theme 显示该主题真实颜色 -->
+          <div class="grid grid-cols-2 grid-rows-2 w-full h-full">
+            <span class="bg-primary"></span>
+            <span class="bg-secondary"></span>
+            <span class="bg-accent"></span>
+            <span class="bg-neutral"></span>
           </div>
-          <div class="flex items-center justify-between gap-1">
+          <!-- 名称 + 选中标记：底部半透明遮罩 -->
+          <div class="absolute inset-x-0 bottom-0 px-2 py-1.5 bg-base-100/85 backdrop-blur-sm flex items-center justify-between gap-1">
             <span class="text-xs font-medium truncate">${t(THEME_NAME_KEY[name])}</span>
             ${name === current ? '<i data-lucide="check" class="w-3.5 h-3.5 text-primary shrink-0"></i>' : ""}
           </div>
