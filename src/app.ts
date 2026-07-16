@@ -166,7 +166,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const emptyHint = qs<HTMLElement>(root, "#empty-hint");
   const categoryList = qs<HTMLElement>(root, "#category-list");
   const container = qs<HTMLElement>(root, "#module-container");
-  const backBtn = qs<HTMLButtonElement>(root, "#back-btn");
   const catBackBtn = qs<HTMLButtonElement>(root, "#cat-back-btn");
   const toolsHeaderIcon = qs<HTMLButtonElement>(root, "#tools-header-icon");
   const toolsHeaderText = qs<HTMLButtonElement>(root, "#tools-header-text");
@@ -380,7 +379,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     if (m) enterModule(m);
   });
 
-  backBtn.addEventListener("click", showHome);
   catBackBtn.addEventListener("click", showHome);
   toolsHeaderIcon.addEventListener("click", showCategoryView);
   toolsHeaderText.addEventListener("click", showCategoryView);
