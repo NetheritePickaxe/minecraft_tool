@@ -20,10 +20,10 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-# 项目位于 mc-toolbox 子目录
+# 项目位于仓库根目录
 defaults:
   run:
-    working-directory: mc-toolbox
+    working-directory: .
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: mc-toolbox/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
 
@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: mc-toolbox/dist
+          path: dist
 
   deploy:
     needs: build

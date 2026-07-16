@@ -10,10 +10,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# 项目位于 mc-toolbox 子目录
+# 项目位于仓库根目录
 defaults:
   run:
-    working-directory: mc-toolbox
+    working-directory: .
 
 # 同一分支新 push 取消旧 lint
 concurrency:
@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: mc-toolbox/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
 
@@ -51,7 +51,6 @@ jobs:
           components: rustfmt
 
       - name: cargo fmt --check
-        working-directory: mc-toolbox/src-tauri
         run: cargo fmt --check
 
   # ============ Rust Clippy 代码检查 ============
@@ -76,11 +75,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: mc-toolbox/src-tauri
+          workspaces: src-tauri
 
       # -D warnings: warning 当作 error，保证代码质量
       # --all-targets: 检查所有目标（含 tests/benches）
       # 仅检查桌面端（默认 target），Android target 需 NDK，由 build job 覆盖
       - name: cargo clippy
-        working-directory: mc-toolbox/src-tauri
         run: cargo clippy --all-targets -- -D warnings
