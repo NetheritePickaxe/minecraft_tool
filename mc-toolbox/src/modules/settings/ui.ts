@@ -214,20 +214,10 @@ export function createUi(container: HTMLElement): SettingsUi {
   function renderThemeButtons(): void {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
-      (name) => `
-        <button class="aspect-square rounded-2xl overflow-hidden border ${name === current ? "border-primary ring-2 ring-primary" : "border-base-300 hover:border-primary/40"} transition-colors relative" data-theme-set="${name}" data-theme="${name}">
-          <!-- 四色方块铺满卡片（参考微软四象限），局部 data-theme 显示该主题真实颜色 -->
-          <div class="grid grid-cols-2 grid-rows-2 w-full h-full">
-            <span class="bg-primary"></span>
-            <span class="bg-secondary"></span>
-            <span class="bg-accent"></span>
-            <span class="bg-neutral"></span>
-          </div>
-          <!-- 名称 + 选中标记：底部半透明遮罩 -->
-          <div class="absolute inset-x-0 bottom-0 px-2 py-1.5 bg-base-100/85 backdrop-blur-sm flex items-center justify-between gap-1">
-            <span class="text-xs font-medium truncate">${t(THEME_NAME_KEY[name])}</span>
-            ${name === current ? '<i data-lucide="check" class="w-3.5 h-3.5 text-primary shrink-0"></i>' : ""}
-          </div>
+      (name) =>
+        `<button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 ${name === current ? "btn-active" : ""}" data-theme-set="${name}" data-theme="${name}">
+          <span class="w-5 h-5 rounded-full bg-primary border border-base-300"></span>
+          <span class="text-xs">${t(THEME_NAME_KEY[name])}</span>
         </button>`,
     ).join("");
   }
