@@ -75,6 +75,8 @@
   "modules.settings.theme.name.dim": "暗淡",
   "modules.settings.theme.name.nord": "霜雪",
   "modules.settings.theme.name.sunset": "日落",
+  "modules.settings.theme.name.minecraft": "我的世界",
+  "modules.settings.theme.name.minecraft-dark": "我的世界（深色）",
   "modules.settings.links.title": "链接",
   "modules.settings.links.repo": "GitHub 仓库",
   "modules.settings.links.issues": "报告问题",

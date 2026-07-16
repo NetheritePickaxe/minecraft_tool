@@ -75,6 +75,8 @@
   "modules.settings.theme.name.dim": "Dim",
   "modules.settings.theme.name.nord": "Nord",
   "modules.settings.theme.name.sunset": "Sunset",
+  "modules.settings.theme.name.minecraft": "Minecraft",
+  "modules.settings.theme.name.minecraft-dark": "Minecraft (Dark)",
   "modules.settings.links.title": "Links",
   "modules.settings.links.repo": "GitHub Repository",
   "modules.settings.links.issues": "Report an Issue",

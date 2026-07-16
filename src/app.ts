@@ -12,8 +12,10 @@ import {
   ChevronRight,
   Download,
   ExternalLink,
+  Globe,
   Home,
   Info,
+  Languages,
   LayoutGrid,
   MessageCircle,
   RefreshCw,
@@ -21,6 +23,7 @@ import {
   Search,
   Settings,
   Star,
+  SunMoon,
   Wrench,
 } from "lucide";
 import {
@@ -46,8 +49,10 @@ const ICONS = {
   ChevronRight,
   Download,
   ExternalLink,
+  Globe,
   Home,
   Info,
+  Languages,
   LayoutGrid,
   MessageCircle,
   RefreshCw,
@@ -55,6 +60,7 @@ const ICONS = {
   Search,
   Settings,
   Star,
+  SunMoon,
   Wrench,
 };
 
@@ -90,7 +96,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </div>
       </div>
 
-      <main class="flex-1 pb-16">
+      <main class="flex-1 pb-16 pt-[env(safe-area-inset-top,0px)]">
         <!-- 搜索框：全局共享，home/category 视图都显示 -->
         <div id="search-wrapper" class="px-4 pt-4 max-w-2xl mx-auto">
           <label class="flex items-center gap-3 bg-base-100 rounded-2xl px-5 py-3.5 shadow-sm">
@@ -131,32 +137,21 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
         <!-- 工具详情页 -->
         <section id="detail-view" class="hidden">
-          <div class="navbar bg-base-100/90 backdrop-blur sticky top-14 z-20 px-4 min-h-14 border-b border-base-200">
-            <div class="navbar-start">
-              <button id="back-btn" class="btn btn-sm btn-ghost gap-1">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                <span data-i18n="app.back"></span>
-              </button>
-            </div>
-            <div class="navbar-center">
-              <span id="detail-title" class="font-semibold"></span>
-            </div>
-          </div>
           <div id="module-container" class="max-w-2xl mx-auto p-4"></div>
         </section>
       </main>
 
-      <!-- 底部导航：DaisyUI btm-nav，未激活仅图标，激活浮现文字 -->
-      <div class="btm-nav fixed bottom-0 z-30 border-t border-base-200">
-        <button id="nav-home" class="text-primary border-primary" data-nav="home">
-          <i data-lucide="home" class="w-5 h-5"></i>
-          <span class="btm-nav-label text-[10px] font-medium" data-i18n="app.home"></span>
+      <!-- 底部导航：MD3 Navigation Bar -->
+      <div class="fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-200 px-6 pt-2 pb-3 flex justify-around gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button id="nav-home" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors bg-primary/10 text-primary" data-nav="home">
+          <i data-lucide="home" class="w-6 h-6"></i>
+          <span class="text-xs font-medium" data-i18n="app.home"></span>
         </button>
         ${
           settingsModule
-            ? `<button id="nav-settings" class="text-base-content/50" data-nav="settings">
-          <i data-lucide="settings" class="w-5 h-5"></i>
-          <span class="btm-nav-label text-[10px] font-medium" data-i18n="app.settings"></span>
+            ? `<button id="nav-settings" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors text-base-content/70 hover:bg-base-200" data-nav="settings">
+          <i data-lucide="settings" class="w-6 h-6"></i>
+          <span class="text-xs font-medium" data-i18n="app.settings"></span>
         </button>`
             : ""
         }
@@ -171,7 +166,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const emptyHint = qs<HTMLElement>(root, "#empty-hint");
   const categoryList = qs<HTMLElement>(root, "#category-list");
   const container = qs<HTMLElement>(root, "#module-container");
-  const detailTitle = qs<HTMLElement>(root, "#detail-title");
   const backBtn = qs<HTMLButtonElement>(root, "#back-btn");
   const catBackBtn = qs<HTMLButtonElement>(root, "#cat-back-btn");
   const toolsHeaderIcon = qs<HTMLButtonElement>(root, "#tools-header-icon");
@@ -231,8 +225,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         el.placeholder = t(el.dataset.i18nPlaceholder!);
       });
     if (activeModuleId) {
-      const m = modules.find((x) => x.id === activeModuleId);
-      if (m) detailTitle.textContent = t(m.nameKey);
+      // detailTitle removed - no longer needed
     }
   }
 
@@ -348,7 +341,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     categoryView.classList.add("scale-95", "opacity-0");
     detailView.classList.remove("hidden");
     activeModuleId = settingsModule.id;
-    detailTitle.textContent = t(settingsModule.nameKey);
     activateModule(settingsModule.id, container);
     setNav("settings");
     window.scrollTo({ top: 0 });
@@ -356,7 +348,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   function enterModule(m: ModuleRegistration): void {
     activeModuleId = m.id;
-    detailTitle.textContent = t(m.nameKey);
     searchWrapper.classList.add("hidden");
     homeView.classList.add("hidden");
     categoryView.classList.add("hidden");

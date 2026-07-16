@@ -121,7 +121,7 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
       </div>
 
-      <!-- 关于：所有平台都显示（版本/平台/作者） -->
+      <!-- 关于：所有平台都显示（版本/平台/作者/更新） -->
       <div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body gap-3">
           <h3 class="card-title text-base gap-2">
@@ -146,34 +146,24 @@ export function createUi(container: HTMLElement): SettingsUi {
               </tbody>
             </table>
           </div>
+          ${
+            isApp
+              ? `<div id="set-update-area" class="space-y-3 mt-2 pt-3 border-t border-base-200">
+              <button id="set-check-card" class="btn btn-primary w-full gap-2">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                <span data-i18n="modules.settings.update.check"></span>
+              </button>
+              <div id="set-update-status" class="text-sm"></div>
+              <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
+              <button id="set-install-card" class="btn btn-success w-full gap-2 hidden">
+                <i data-lucide="download" class="w-5 h-5"></i>
+                <span data-i18n="modules.settings.update.install"></span>
+              </button>
+            </div>`
+              : ""
+          }
         </div>
       </div>
-
-      <!-- 检查更新：仅 Tauri 应用端显示，按钮用 card 样式 -->
-      ${
-        isApp
-          ? `<div class="card bg-base-100 rounded-2xl shadow-sm">
-        <div class="card-body gap-3">
-          <h3 class="card-title text-base gap-2">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.update.title"></span>
-          </h3>
-          <div id="set-update-area" class="space-y-3">
-            <button id="set-check-card" class="btn btn-primary w-full gap-2">
-              <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-              <span data-i18n="modules.settings.update.check"></span>
-            </button>
-            <div id="set-update-status" class="text-sm"></div>
-            <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-            <button id="set-install-card" class="btn btn-success w-full gap-2 hidden">
-              <i data-lucide="download" class="w-5 h-5"></i>
-              <span data-i18n="modules.settings.update.install"></span>
-            </button>
-          </div>
-        </div>
-      </div>`
-          : ""
-      }
     </div>
   `;
 
