@@ -218,8 +218,8 @@ export function createUi(container: HTMLElement): SettingsUi {
         const checked = name === current;
         return `
           <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}">
-            <div class="rounded-3xl p-2 transition-all ${checked ? "bg-primary/10 ring-2 ring-primary" : "bg-base-200 hover:bg-base-300"}">
-              <div class="grid grid-cols-2 gap-1 mb-1.5" data-theme="${name}">
+            <div class="rounded-3xl p-2 transition-all ${checked ? "ring-2 ring-primary" : ""}">
+              <div class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl bg-base-200 p-2" data-theme="${name}">
                 <span class="aspect-square rounded-2xl bg-primary"></span>
                 <span class="aspect-square rounded-2xl bg-secondary"></span>
                 <span class="aspect-square rounded-2xl bg-accent"></span>
