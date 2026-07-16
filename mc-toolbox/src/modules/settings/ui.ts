@@ -215,16 +215,15 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
       (name) => `
-        <button class="text-left rounded-2xl overflow-hidden border ${name === current ? "border-primary ring-2 ring-primary" : "border-base-300 hover:border-primary/40"} transition-colors bg-base-100" data-theme-set="${name}" data-theme="${name}">
-          <!-- 色带：用局部 data-theme 让色块显示该主题真实颜色 -->
-          <div data-theme="${name}" class="flex h-10">
-            <span class="flex-1 bg-primary"></span>
-            <span class="flex-1 bg-secondary"></span>
-            <span class="flex-1 bg-accent"></span>
-            <span class="flex-1 bg-neutral"></span>
-            <span class="flex-1 bg-base-200"></span>
+        <button class="text-left rounded-2xl p-2.5 border ${name === current ? "border-primary ring-2 ring-primary" : "border-base-300 hover:border-primary/40"} transition-colors bg-base-100 flex flex-col gap-2" data-theme-set="${name}">
+          <!-- 四色方块 logo（参考微软四象限），局部 data-theme 显示该主题真实颜色 -->
+          <div data-theme="${name}" class="grid grid-cols-2 gap-1 w-9 h-9 shrink-0">
+            <span class="bg-primary rounded-md"></span>
+            <span class="bg-secondary rounded-md"></span>
+            <span class="bg-accent rounded-md"></span>
+            <span class="bg-neutral rounded-md"></span>
           </div>
-          <div data-theme="${name}" class="px-2.5 py-2 flex items-center justify-between gap-1">
+          <div class="flex items-center justify-between gap-1">
             <span class="text-xs font-medium truncate">${t(THEME_NAME_KEY[name])}</span>
             ${name === current ? '<i data-lucide="check" class="w-3.5 h-3.5 text-primary shrink-0"></i>' : ""}
           </div>
