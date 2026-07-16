@@ -217,14 +217,14 @@ export function createUi(container: HTMLElement): SettingsUi {
       (name) => {
         const checked = name === current;
         return `
-          <button class="card bg-base-100 rounded-3xl p-2 shadow-sm hover:shadow-md transition-all cursor-pointer text-left ${checked ? "ring-2 ring-primary bg-primary/5 rounded-3xl" : "hover:bg-base-200 rounded-3xl"}" data-theme-set="${name}">
-            <div class="grid grid-cols-2 gap-1 mb-2" data-theme="${name}">
-              <span class="aspect-square rounded-2xl bg-primary"></span>
-              <span class="aspect-square rounded-2xl bg-secondary"></span>
-              <span class="aspect-square rounded-2xl bg-accent"></span>
-              <span class="aspect-square rounded-2xl bg-neutral"></span>
+          <button class="card bg-base-100 rounded-3xl p-1 shadow-sm hover:shadow-md transition-all cursor-pointer text-left ${checked ? "ring-2 ring-primary bg-primary/5 rounded-3xl" : "hover:bg-base-200 rounded-3xl"}" data-theme-set="${name}">
+            <div class="grid grid-cols-2 gap-0.5 mb-1" data-theme="${name}">
+              <span class="w-5 h-5 rounded-xl bg-primary"></span>
+              <span class="w-5 h-5 rounded-xl bg-secondary"></span>
+              <span class="w-5 h-5 rounded-xl bg-accent"></span>
+              <span class="w-5 h-5 rounded-xl bg-neutral"></span>
             </div>
-            <div class="font-bold text-xs text-center truncate">${t(THEME_NAME_KEY[name])}</div>
+            <div class="font-bold text-[10px] text-center truncate">${t(THEME_NAME_KEY[name])}</div>
           </button>`;
       },
     ).join("");
