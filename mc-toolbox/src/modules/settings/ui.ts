@@ -77,8 +77,8 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span data-i18n="modules.settings.theme.title"></span>
         </div>
         <div class="collapse-content">
-          <!-- 主题选择：列表形式 -->
-          <div class="flex flex-col gap-1 mt-2" id="set-theme-list"></div>
+          <!-- 主题选择：卡片网格 -->
+          <div class="grid grid-cols-2 gap-3 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
@@ -217,14 +217,14 @@ export function createUi(container: HTMLElement): SettingsUi {
       (name) => {
         const checked = name === current;
         return `
-          <button class="flex items-center gap-3 p-2 rounded-box cursor-pointer transition-colors w-full text-left ${checked ? "ring-2 ring-primary bg-primary/5" : "hover:bg-base-200"}" data-theme-set="${name}">
-            <div class="grid grid-cols-2 gap-1 w-12 h-12 shrink-0" data-theme="${name}">
-              <span class="rounded-sm bg-primary"></span>
-              <span class="rounded-sm bg-secondary"></span>
-              <span class="rounded-sm bg-accent"></span>
-              <span class="rounded-sm bg-neutral"></span>
+          <button class="card bg-base-100 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer text-left ${checked ? "ring-2 ring-primary" : ""}" data-theme-set="${name}">
+            <div class="grid grid-cols-2 gap-2 mb-3" data-theme="${name}">
+              <span class="aspect-square rounded-xl bg-primary"></span>
+              <span class="aspect-square rounded-xl bg-secondary"></span>
+              <span class="aspect-square rounded-xl bg-accent"></span>
+              <span class="aspect-square rounded-xl bg-neutral"></span>
             </div>
-            <span class="flex-1 text-sm font-medium">${t(THEME_NAME_KEY[name])}</span>
+            <div class="font-bold text-sm text-center truncate">${t(THEME_NAME_KEY[name])}</div>
           </button>`;
       },
     ).join("");
