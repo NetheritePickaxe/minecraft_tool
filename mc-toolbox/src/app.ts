@@ -311,16 +311,17 @@ export async function mountApp(root: HTMLElement): Promise<void> {
           )
           .join("");
         return `
-          <div class="card bg-base-100 rounded-2xl shadow-sm">
-            <div class="card-body p-4">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <i data-lucide="${c.icon}" class="w-4 h-4 text-primary"></i>
-                </span>
-                <h3 class="font-bold text-base flex-1">${t(c.nameKey)}</h3>
-                <span class="badge badge-sm badge-ghost">${items.length}</span>
-              </div>
-              <div class="grid grid-cols-2 gap-3">${cards}</div>
+          <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
+            <input type="checkbox" />
+            <div class="collapse-title font-medium flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                <i data-lucide="${c.icon}" class="w-4 h-4 text-primary"></i>
+              </span>
+              <span class="flex-1">${t(c.nameKey)}</span>
+              <span class="badge badge-sm badge-ghost">${items.length}</span>
+            </div>
+            <div class="collapse-content">
+              <div class="grid grid-cols-2 gap-3 mt-2">${cards}</div>
             </div>
           </div>
         `;
