@@ -116,18 +116,15 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
         <!-- 全局分类视图 -->
         <section id="category-view" class="hidden max-w-2xl mx-auto transition-all duration-200 ease-out origin-top scale-95 opacity-0">
-          <div class="navbar bg-base-100/90 backdrop-blur sticky top-14 z-20 px-2 min-h-14 border-b border-base-200">
-            <div class="navbar-start">
-              <button id="cat-back-btn" class="btn btn-sm btn-ghost gap-1">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                <span data-i18n="app.back"></span>
-              </button>
-            </div>
-            <div class="navbar-center">
-              <span class="font-semibold" data-i18n="app.categories"></span>
-            </div>
+          <!-- 分类视图标题栏：与搜索框风格一致 -->
+          <div class="px-4 pt-4 pb-3 flex items-center gap-2">
+            <button id="cat-back-btn" class="btn btn-sm btn-ghost gap-1">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span data-i18n="app.back"></span>
+            </button>
+            <h2 class="font-bold text-base" data-i18n="app.categories"></h2>
           </div>
-          <div id="category-list" class="p-4 space-y-3"></div>
+          <div id="category-list" class="px-4 pb-4 space-y-3"></div>
         </section>
 
         <!-- 工具详情页 -->
@@ -314,17 +311,16 @@ export async function mountApp(root: HTMLElement): Promise<void> {
           )
           .join("");
         return `
-          <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
-            <input type="checkbox" checked />
-            <div class="collapse-title font-medium flex items-center gap-2">
-              <span class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <i data-lucide="${c.icon}" class="w-4 h-4 text-primary"></i>
-              </span>
-              <span>${t(c.nameKey)}</span>
-              <span class="badge badge-sm badge-ghost ml-1">${items.length}</span>
-            </div>
-            <div class="collapse-content">
-              <div class="grid grid-cols-2 gap-3 mt-2">${cards}</div>
+          <div class="card bg-base-100 rounded-2xl shadow-sm">
+            <div class="card-body p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <i data-lucide="${c.icon}" class="w-4 h-4 text-primary"></i>
+                </span>
+                <h3 class="font-bold text-base flex-1">${t(c.nameKey)}</h3>
+                <span class="badge badge-sm badge-ghost">${items.length}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-3">${cards}</div>
             </div>
           </div>
         `;
