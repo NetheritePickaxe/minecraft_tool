@@ -103,10 +103,10 @@ export function createUi(container: HTMLElement): SettingsUi {
               <span class="badge badge-sm badge-ghost" id="set-radius-box-val"></span>
             </div>
             <div class="join w-full mb-1">
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="none">0</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="sm">S</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="md">M</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="box" data-radius-level="lg">L</button>
+              <input type="radio" name="radius-box" value="none" class="btn btn-xs join-item flex-1 radius-opt" aria-label="0" data-radius-key="box" data-radius-level="none" />
+              <input type="radio" name="radius-box" value="sm" class="btn btn-xs join-item flex-1 radius-opt" aria-label="S" data-radius-key="box" data-radius-level="sm" />
+              <input type="radio" name="radius-box" value="md" class="btn btn-xs join-item flex-1 radius-opt" aria-label="M" data-radius-key="box" data-radius-level="md" />
+              <input type="radio" name="radius-box" value="lg" class="btn btn-xs join-item flex-1 radius-opt" aria-label="L" data-radius-key="box" data-radius-level="lg" />
             </div>
             <div class="bg-base-200 p-3 flex justify-center">
               <div class="w-12 h-8 bg-primary/20 border border-primary/40 rounded-box" data-radius-preview="box"></div>
@@ -119,10 +119,10 @@ export function createUi(container: HTMLElement): SettingsUi {
               <span class="badge badge-sm badge-ghost" id="set-radius-field-val"></span>
             </div>
             <div class="join w-full mb-1">
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="none">0</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="sm">S</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="md">M</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="field" data-radius-level="lg">L</button>
+              <input type="radio" name="radius-field" value="none" class="btn btn-xs join-item flex-1 radius-opt" aria-label="0" data-radius-key="field" data-radius-level="none" />
+              <input type="radio" name="radius-field" value="sm" class="btn btn-xs join-item flex-1 radius-opt" aria-label="S" data-radius-key="field" data-radius-level="sm" />
+              <input type="radio" name="radius-field" value="md" class="btn btn-xs join-item flex-1 radius-opt" aria-label="M" data-radius-key="field" data-radius-level="md" />
+              <input type="radio" name="radius-field" value="lg" class="btn btn-xs join-item flex-1 radius-opt" aria-label="L" data-radius-key="field" data-radius-level="lg" />
             </div>
             <div class="bg-base-200 p-3 flex justify-center">
               <input type="text" class="input input-bordered w-24 rounded-field" data-radius-preview="field" placeholder="A" />
@@ -135,10 +135,10 @@ export function createUi(container: HTMLElement): SettingsUi {
               <span class="badge badge-sm badge-ghost" id="set-radius-selector-val"></span>
             </div>
             <div class="join w-full mb-1">
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="none">0</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="sm">S</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="md">M</button>
-              <button class="btn btn-xs join-item flex-1 radius-opt" data-radius-key="selector" data-radius-level="lg">L</button>
+              <input type="radio" name="radius-selector" value="none" class="btn btn-xs join-item flex-1 radius-opt" aria-label="0" data-radius-key="selector" data-radius-level="none" />
+              <input type="radio" name="radius-selector" value="sm" class="btn btn-xs join-item flex-1 radius-opt" aria-label="S" data-radius-key="selector" data-radius-level="sm" />
+              <input type="radio" name="radius-selector" value="md" class="btn btn-xs join-item flex-1 radius-opt" aria-label="M" data-radius-key="selector" data-radius-level="md" />
+              <input type="radio" name="radius-selector" value="lg" class="btn btn-xs join-item flex-1 radius-opt" aria-label="L" data-radius-key="selector" data-radius-level="lg" />
             </div>
             <div class="bg-base-200 p-3 flex justify-center gap-2">
               <input type="checkbox" class="checkbox checkbox-primary rounded-selector" data-radius-preview="selector" checked />
@@ -310,13 +310,11 @@ export function createUi(container: HTMLElement): SettingsUi {
       const valEl = container.querySelector<HTMLElement>(`#set-radius-${key}-val`);
       if (valEl) valEl.textContent = t(`modules.settings.radius.level.${current}`);
       container
-        .querySelectorAll<HTMLButtonElement>(
+        .querySelectorAll<HTMLInputElement>(
           `.radius-opt[data-radius-key="${key}"]`,
         )
-        .forEach((btn) => {
-          const active = btn.dataset.radiusLevel === current;
-          btn.classList.toggle("btn-active", active);
-          btn.classList.toggle("btn-primary", active);
+        .forEach((input) => {
+          input.checked = input.dataset.radiusLevel === current;
         });
     });
   }
@@ -548,18 +546,18 @@ export function createUi(container: HTMLElement): SettingsUi {
   });
   const offLocale = onLocaleChange(() => refresh());
 
-  // 圆角选项点击（事件委托）
-  const onRadiusClick = (e: Event): void => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
+  // 圆角选项 change（事件委托）
+  const handleRadiusInputChange = (e: Event): void => {
+    const input = (e.target as HTMLElement).closest<HTMLInputElement>(
       ".radius-opt",
     );
-    if (!btn) return;
-    const key = btn.dataset.radiusKey as RadiusKey;
-    const level = btn.dataset.radiusLevel as RadiusLevel;
+    if (!input || !input.checked) return;
+    const key = input.dataset.radiusKey as RadiusKey;
+    const level = input.dataset.radiusLevel as RadiusLevel;
     if (!key || !level || !RADIUS_LEVELS.includes(level)) return;
     applyRadiusLevel(key, level);
   };
-  container.addEventListener("click", onRadiusClick);
+  container.addEventListener("change", handleRadiusInputChange);
   // 圆角变化时刷新激活态（预览元素靠 CSS 变量自动生效）
   const offRadius = onRadiusChange(() => renderRadius());
 
@@ -572,7 +570,7 @@ export function createUi(container: HTMLElement): SettingsUi {
       offTheme();
       offLocale();
       offRadius();
-      container.removeEventListener("click", onRadiusClick);
+      container.removeEventListener("change", handleRadiusInputChange);
     },
   };
 }

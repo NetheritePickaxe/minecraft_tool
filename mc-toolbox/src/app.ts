@@ -148,20 +148,22 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：DaisyUI 默认 btm-nav -->
-      <div class="btm-nav btm-nav-sm z-30">
-        <button id="nav-home" class="active" data-nav="home">
-          <i data-lucide="home" class="w-5 h-5"></i>
-          <span class="btm-nav-label" data-i18n="app.home"></span>
-        </button>
-        ${
-          settingsModule
-            ? `<button id="nav-settings" data-nav="settings">
-          <i data-lucide="settings" class="w-5 h-5"></i>
-          <span class="btm-nav-label" data-i18n="app.settings"></span>
-        </button>`
-            : ""
-        }
+      <!-- 底部导航：DaisyUI join 图标+文字按钮组 -->
+      <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30">
+        <div class="join shadow-lg">
+          <button id="nav-home" class="btn join-item btn-active gap-2" data-nav="home">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span data-i18n="app.home"></span>
+          </button>
+          ${
+            settingsModule
+              ? `<button id="nav-settings" class="btn join-item gap-2" data-nav="settings">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            <span data-i18n="app.settings"></span>
+          </button>`
+              : ""
+          }
+        </div>
       </div>
     </div>
   `;
@@ -241,8 +243,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setNav(tab: NavTab): void {
-    navHome.classList.toggle("active", tab === "home");
-    navSettings?.classList.toggle("active", tab === "settings");
+    navHome.classList.toggle("btn-active", tab === "home");
+    navSettings?.classList.toggle("btn-active", tab === "settings");
   }
 
   function showHome(): void {
