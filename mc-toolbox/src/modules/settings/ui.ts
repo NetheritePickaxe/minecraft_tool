@@ -83,8 +83,8 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span data-i18n="modules.settings.theme.title"></span>
         </div>
         <div class="collapse-content">
-          <!-- 主题选择：每个预览按钮用局部 data-theme 显示该主题真实颜色 -->
-          <div class="grid grid-cols-3 gap-2 mt-2" id="set-theme-list"></div>
+          <!-- 主题选择：DaisyUI 默认 radio 列表 -->
+          <div class="flex flex-col gap-0 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
@@ -283,16 +283,10 @@ export function createUi(container: HTMLElement): SettingsUi {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
       (name) => `
-        <button class="btn btn-sm h-auto p-0 overflow-hidden ${name === current ? "ring-2 ring-primary" : ""}" data-theme-set="${name}">
-          <!-- 四色铺满卡片（参考 DaisyUI 官网四色展示） -->
-          <div data-theme="${name}" class="grid grid-cols-2 grid-rows-2 w-full aspect-square">
-            <span class="bg-primary"></span>
-            <span class="bg-secondary"></span>
-            <span class="bg-accent"></span>
-            <span class="bg-neutral"></span>
-          </div>
-          <span class="text-xs px-1 py-1 truncate">${t(THEME_NAME_KEY[name])}</span>
-        </button>`,
+        <label class="label cursor-pointer justify-start gap-3 py-2" data-theme-set="${name}">
+          <input type="radio" name="theme-radio" value="${name}" class="radio radio-primary" ${name === current ? "checked" : ""} />
+          <span class="label-text">${t(THEME_NAME_KEY[name])}</span>
+        </label>`,
     ).join("");
   }
 
@@ -410,12 +404,12 @@ export function createUi(container: HTMLElement): SettingsUi {
   });
 
   // 主题选择（动态渲染，事件委托）
-  themeList.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
-      "[data-theme-set]",
+  themeList.addEventListener("change", (e) => {
+    const radio = (e.target as HTMLElement).closest<HTMLInputElement>(
+      "input[name=\"theme-radio\"]",
     );
-    if (!btn) return;
-    applyTheme(btn.dataset.themeSet as Theme);
+    if (!radio) return;
+    applyTheme(radio.value as Theme);
   });
 
   container.addEventListener("click", async (e) => {

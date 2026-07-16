@@ -148,23 +148,21 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：自定义 flex，激活态圆形高亮底 -->
-      <footer class="bg-base-100 border-t border-base-200 z-30 sticky bottom-0">
-        <nav class="flex justify-around items-center h-16 max-w-2xl mx-auto">
-          <button id="nav-home" class="flex flex-col items-center gap-0.5 py-1" data-nav="home">
-            <span class="nav-icon w-9 h-9 rounded-full flex items-center justify-center transition-colors">
-              <i data-lucide="home" class="w-5 h-5"></i>
-            </span>
-            <span class="nav-label text-[10px]" data-i18n="app.home"></span>
-          </button>
-          <button id="nav-settings" class="flex flex-col items-center gap-0.5 py-1" data-nav="settings" ${settingsModule ? "" : "disabled"}>
-            <span class="nav-icon w-9 h-9 rounded-full flex items-center justify-center transition-colors">
-              <i data-lucide="settings" class="w-5 h-5"></i>
-            </span>
-            <span class="nav-label text-[10px]" data-i18n="app.settings"></span>
-          </button>
-        </nav>
-      </footer>
+      <!-- 底部导航：DaisyUI 默认 btm-nav -->
+      <div class="btm-nav btm-nav-sm z-30">
+        <button id="nav-home" class="active" data-nav="home">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span class="btm-nav-label" data-i18n="app.home"></span>
+        </button>
+        ${
+          settingsModule
+            ? `<button id="nav-settings" data-nav="settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span class="btm-nav-label" data-i18n="app.settings"></span>
+        </button>`
+            : ""
+        }
+      </div>
     </div>
   `;
 
@@ -181,7 +179,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const toolsHeader = qs<HTMLButtonElement>(root, "#tools-header");
   const searchInput = qs<HTMLInputElement>(root, "#search-input");
   const navHome = qs<HTMLElement>(root, "#nav-home");
-  const navSettings = qs<HTMLElement>(root, "#nav-settings");
+  const navSettings = root.querySelector<HTMLElement>("#nav-settings");
 
   let activeModuleId: string | null = null;
   let searchQuery = "";
@@ -243,20 +241,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setNav(tab: NavTab): void {
-    const apply = (btn: HTMLElement, active: boolean) => {
-      const icon = btn.querySelector<HTMLElement>(".nav-icon");
-      const label = btn.querySelector<HTMLElement>(".nav-label");
-      if (icon) {
-        icon.classList.toggle("bg-primary/15", active);
-        icon.classList.toggle("text-primary", active);
-      }
-      if (label) {
-        label.classList.toggle("text-primary", active);
-        label.classList.toggle("font-medium", active);
-      }
-    };
-    apply(navHome, tab === "home");
-    apply(navSettings, tab === "settings");
+    navHome.classList.toggle("active", tab === "home");
+    navSettings?.classList.toggle("active", tab === "settings");
   }
 
   function showHome(): void {
@@ -373,7 +359,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   catBackBtn.addEventListener("click", showHome);
   toolsHeader.addEventListener("click", showCategoryView);
   navHome.addEventListener("click", showHome);
-  navSettings.addEventListener("click", showSettings);
+  navSettings?.addEventListener("click", showSettings);
 
   searchInput.addEventListener("input", () => {
     searchQuery = searchInput.value;
