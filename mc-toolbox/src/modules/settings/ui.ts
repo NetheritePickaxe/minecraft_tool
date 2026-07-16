@@ -83,8 +83,8 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span data-i18n="modules.settings.theme.title"></span>
         </div>
         <div class="collapse-content">
-          <!-- 主题选择：DaisyUI 默认 radio 列表 -->
-          <div class="flex flex-col gap-0 mt-2" id="set-theme-list"></div>
+          <!-- 主题选择：DaisyUI 官网风格主题预览卡片网格 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
@@ -282,11 +282,30 @@ export function createUi(container: HTMLElement): SettingsUi {
   function renderThemeButtons(): void {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
-      (name) => `
-        <label class="label cursor-pointer justify-start gap-3 py-2" data-theme-set="${name}">
-          <input type="radio" name="theme-radio" value="${name}" class="radio radio-primary" ${name === current ? "checked" : ""} />
-          <span class="label-text">${t(THEME_NAME_KEY[name])}</span>
-        </label>`,
+      (name) => {
+        const checked = name === current;
+        return `
+          <label class="cursor-pointer" data-theme-set="${name}">
+            <input type="radio" name="theme-radio" value="${name}" class="peer sr-only" ${checked ? "checked" : ""} />
+            <div class="peer-checked:outline-base-content overflow-hidden rounded-box border border-base-content/20 hover:border-base-content/40 outline-2 outline-offset-2 outline-transparent" data-theme="${name}">
+              <div class="bg-base-100 text-base-content w-full font-sans">
+                <div class="grid grid-cols-5 grid-rows-3">
+                  <div class="bg-base-200 col-start-1 row-span-2 row-start-1"></div>
+                  <div class="bg-base-300 col-start-1 row-start-3"></div>
+                  <div class="bg-base-100 col-span-4 col-start-2 row-span-3 row-start-1 flex flex-col gap-1 p-2">
+                    <div class="font-bold text-sm truncate">${t(THEME_NAME_KEY[name])}</div>
+                    <div class="flex flex-wrap gap-1">
+                      <div class="bg-primary flex aspect-square w-4 items-center justify-center rounded text-primary-content text-[10px] font-bold">A</div>
+                      <div class="bg-secondary flex aspect-square w-4 items-center justify-center rounded text-secondary-content text-[10px] font-bold">A</div>
+                      <div class="bg-accent flex aspect-square w-4 items-center justify-center rounded text-accent-content text-[10px] font-bold">A</div>
+                      <div class="bg-neutral flex aspect-square w-4 items-center justify-center rounded text-neutral-content text-[10px] font-bold">A</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </label>`;
+      },
     ).join("");
   }
 
