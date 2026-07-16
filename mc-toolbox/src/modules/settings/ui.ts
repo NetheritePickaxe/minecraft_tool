@@ -217,12 +217,12 @@ export function createUi(container: HTMLElement): SettingsUi {
       (name) => {
         const checked = name === current;
         return `
-          <button class="card bg-base-100 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer text-left ${checked ? "ring-2 ring-primary" : ""}" data-theme-set="${name}">
+          <button class="card bg-base-100 rounded-[2.5rem] p-4 shadow-sm hover:shadow-md transition-all cursor-pointer text-left ${checked ? "ring-2 ring-primary" : ""}" data-theme-set="${name}">
             <div class="grid grid-cols-2 gap-2 mb-3" data-theme="${name}">
-              <span class="aspect-square rounded-xl bg-primary"></span>
-              <span class="aspect-square rounded-xl bg-secondary"></span>
-              <span class="aspect-square rounded-xl bg-accent"></span>
-              <span class="aspect-square rounded-xl bg-neutral"></span>
+              <span class="aspect-square rounded-2xl bg-primary"></span>
+              <span class="aspect-square rounded-2xl bg-secondary"></span>
+              <span class="aspect-square rounded-2xl bg-accent"></span>
+              <span class="aspect-square rounded-2xl bg-neutral"></span>
             </div>
             <div class="font-bold text-sm text-center truncate">${t(THEME_NAME_KEY[name])}</div>
           </button>`;
