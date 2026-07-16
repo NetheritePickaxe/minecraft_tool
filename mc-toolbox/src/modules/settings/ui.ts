@@ -214,10 +214,20 @@ export function createUi(container: HTMLElement): SettingsUi {
   function renderThemeButtons(): void {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
-      (name) =>
-        `<button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 rounded-2xl border-0 ${name === current ? "bg-primary/15 ring-2 ring-primary" : "bg-base-200 hover:bg-base-300"}" data-theme-set="${name}" data-theme="${name}">
-          <span class="w-5 h-5 rounded-full bg-primary border border-base-300"></span>
-          <span class="text-xs">${t(THEME_NAME_KEY[name])}</span>
+      (name) => `
+        <button class="text-left rounded-2xl overflow-hidden border ${name === current ? "border-primary ring-2 ring-primary" : "border-base-300 hover:border-primary/40"} transition-colors bg-base-100" data-theme-set="${name}" data-theme="${name}">
+          <!-- 色带：用局部 data-theme 让色块显示该主题真实颜色 -->
+          <div data-theme="${name}" class="flex h-10">
+            <span class="flex-1 bg-primary"></span>
+            <span class="flex-1 bg-secondary"></span>
+            <span class="flex-1 bg-accent"></span>
+            <span class="flex-1 bg-neutral"></span>
+            <span class="flex-1 bg-base-200"></span>
+          </div>
+          <div data-theme="${name}" class="px-2.5 py-2 flex items-center justify-between gap-1">
+            <span class="text-xs font-medium truncate">${t(THEME_NAME_KEY[name])}</span>
+            ${name === current ? '<i data-lucide="check" class="w-3.5 h-3.5 text-primary shrink-0"></i>' : ""}
+          </div>
         </button>`,
     ).join("");
   }
@@ -441,7 +451,12 @@ export function createUi(container: HTMLElement): SettingsUi {
     }
   }
 
-  const offTheme = onThemeChange(() => renderThemeButtons());
+  const offTheme = onThemeChange(() => {
+    renderThemeButtons();
+    container.dispatchEvent(
+      new CustomEvent("settings:icons-stale", { bubbles: true }),
+    );
+  });
   const offLocale = onLocaleChange(() => refresh());
 
   void loadVersion();
