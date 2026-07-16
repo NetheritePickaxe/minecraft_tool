@@ -89,24 +89,23 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       </div>
 
       <main class="flex-1 pb-24">
-        <!-- 卡片墙主页 -->
-        <section id="home-view" class="max-w-2xl mx-auto">
-          <!-- 搜索框：圆角矩形卡片 -->
-          <div class="px-4 pt-4">
-            <label class="flex items-center gap-3 bg-base-100 rounded-2xl px-5 py-3.5 shadow-sm">
-              <i data-lucide="search" class="w-5 h-5 text-primary opacity-70 shrink-0"></i>
-              <input id="search-input" type="text" class="bg-transparent outline-none flex-1 text-sm placeholder:opacity-50" data-i18n-placeholder="app.search.placeholder" placeholder="${t("app.search.placeholder")}" />
-            </label>
-          </div>
+        <!-- 搜索框：全局共享，home/category 视图都显示 -->
+        <div class="px-4 pt-4 max-w-2xl mx-auto">
+          <label class="flex items-center gap-3 bg-base-100 rounded-2xl px-5 py-3.5 shadow-sm">
+            <i data-lucide="search" class="w-5 h-5 text-primary opacity-70 shrink-0"></i>
+            <input id="search-input" type="text" class="bg-transparent outline-none flex-1 text-sm placeholder:opacity-50" data-i18n-placeholder="app.search.placeholder" placeholder="${t("app.search.placeholder")}" />
+          </label>
+        </div>
 
-          <!-- 区块标题：可点击跳转全局分类视图 -->
-          <button id="tools-header" class="px-4 pt-6 pb-3 flex items-center gap-2 w-full">
-            <span class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+        <!-- 卡片墙主页 -->
+        <section id="home-view" class="max-w-2xl mx-auto transition-all duration-200 ease-out origin-top">
+          <!-- 区块标题：只有图标和文字可点击进入分类视图 -->
+          <div class="px-4 pt-6 pb-3 flex items-center gap-2">
+            <button id="tools-header-icon" class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center cursor-pointer">
               <i data-lucide="layout-grid" class="w-4 h-4 text-primary"></i>
-            </span>
-            <h2 class="font-bold text-base flex-1 text-left" data-i18n="app.tools"></h2>
-            <i data-lucide="chevron-right" class="w-4 h-4 opacity-40"></i>
-          </button>
+            </button>
+            <button id="tools-header-text" class="font-bold text-base flex-1 text-left cursor-pointer" data-i18n="app.tools"></button>
+          </div>
 
           <!-- 工具卡片网格：2 列 -->
           <div id="tool-grid" class="px-4 grid grid-cols-2 gap-3"></div>
@@ -116,7 +115,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
 
         <!-- 全局分类视图 -->
-        <section id="category-view" class="hidden max-w-2xl mx-auto">
+        <section id="category-view" class="hidden max-w-2xl mx-auto transition-all duration-200 ease-out origin-top scale-95 opacity-0">
           <div class="navbar bg-base-100/90 backdrop-blur sticky top-14 z-20 px-2 min-h-14 border-b border-base-200">
             <div class="navbar-start">
               <button id="cat-back-btn" class="btn btn-sm btn-ghost gap-1">
@@ -178,7 +177,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const detailTitle = qs<HTMLElement>(root, "#detail-title");
   const backBtn = qs<HTMLButtonElement>(root, "#back-btn");
   const catBackBtn = qs<HTMLButtonElement>(root, "#cat-back-btn");
-  const toolsHeader = qs<HTMLButtonElement>(root, "#tools-header");
+  const toolsHeaderIcon = qs<HTMLButtonElement>(root, "#tools-header-icon");
+  const toolsHeaderText = qs<HTMLButtonElement>(root, "#tools-header-text");
   const searchInput = qs<HTMLInputElement>(root, "#search-input");
   const navHome = qs<HTMLElement>(root, "#nav-home");
   const navSettings = root.querySelector<HTMLElement>("#nav-settings");
@@ -251,8 +251,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     deactivateActive();
     activeModuleId = null;
     detailView.classList.add("hidden");
-    categoryView.classList.add("hidden");
-    homeView.classList.remove("hidden");
+    categoryView.classList.remove("scale-100", "opacity-100");
+    categoryView.classList.add("scale-95", "opacity-0");
+    setTimeout(() => {
+      categoryView.classList.add("hidden");
+      homeView.classList.remove("hidden");
+    }, 200);
     setNav("home");
     window.scrollTo({ top: 0 });
   }
@@ -261,16 +265,28 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     homeView.classList.add("hidden");
     detailView.classList.add("hidden");
     categoryView.classList.remove("hidden");
+    requestAnimationFrame(() => {
+      categoryView.classList.remove("scale-95", "opacity-0");
+      categoryView.classList.add("scale-100", "opacity-100");
+    });
     renderCategoryView();
     setNav("home");
     window.scrollTo({ top: 0 });
   }
 
   function renderCategoryView(): void {
-    // 按分类分组工具
+    const q = searchQuery.trim().toLowerCase();
+    // 按分类分组工具，同时按搜索过滤
     const grouped = new Map<ModuleCategory, ModuleRegistration[]>();
     for (const cat of CATEGORIES) grouped.set(cat.key, []);
     for (const m of tools) {
+      if (q) {
+        const name = t(m.nameKey).toLowerCase();
+        const desc = m.descriptionKey
+          ? t(m.descriptionKey).toLowerCase()
+          : "";
+        if (!name.includes(q) && !desc.includes(q)) continue;
+      }
       const cat: ModuleCategory = m.category ?? "utility";
       grouped.get(cat)?.push(m);
     }
@@ -317,6 +333,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     if (!settingsModule) return;
     homeView.classList.add("hidden");
     categoryView.classList.add("hidden");
+    categoryView.classList.remove("scale-100", "opacity-100");
+    categoryView.classList.add("scale-95", "opacity-0");
     detailView.classList.remove("hidden");
     activeModuleId = settingsModule.id;
     detailTitle.textContent = t(settingsModule.nameKey);
@@ -330,6 +348,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     detailTitle.textContent = t(m.nameKey);
     homeView.classList.add("hidden");
     categoryView.classList.add("hidden");
+    categoryView.classList.remove("scale-100", "opacity-100");
+    categoryView.classList.add("scale-95", "opacity-0");
     detailView.classList.remove("hidden");
     activateModule(m.id, container);
     setNav("home");
@@ -359,13 +379,17 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   backBtn.addEventListener("click", showHome);
   catBackBtn.addEventListener("click", showHome);
-  toolsHeader.addEventListener("click", showCategoryView);
+  toolsHeaderIcon.addEventListener("click", showCategoryView);
+  toolsHeaderText.addEventListener("click", showCategoryView);
   navHome.addEventListener("click", showHome);
   navSettings?.addEventListener("click", showSettings);
 
   searchInput.addEventListener("input", () => {
     searchQuery = searchInput.value;
     renderToolGrid();
+    if (!categoryView.classList.contains("hidden")) {
+      renderCategoryView();
+    }
   });
 
   container.addEventListener("settings:icons-stale", () => {
