@@ -84,8 +84,8 @@ export function createUi(container: HTMLElement): SettingsUi {
           <span data-i18n="modules.settings.theme.title"></span>
         </div>
         <div class="collapse-content">
-          <!-- 主题选择：DaisyUI 官网风格主题预览卡片网格 -->
-          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2" id="set-theme-list"></div>
+          <!-- 主题选择：列表形式 -->
+          <div class="flex flex-col gap-1 mt-2" id="set-theme-list"></div>
         </div>
       </div>
 
@@ -265,19 +265,10 @@ export function createUi(container: HTMLElement): SettingsUi {
       (name) => {
         const checked = name === current;
         return `
-          <label class="cursor-pointer" data-theme-set="${name}">
-            <input type="radio" name="theme-radio" value="${name}" class="peer sr-only" ${checked ? "checked" : ""} />
-            <div class="peer-checked:outline-base-content overflow-hidden rounded-box border border-base-content/20 hover:border-base-content/40 outline-2 outline-offset-2 outline-transparent" data-theme="${name}">
-              <div class="bg-base-100 text-base-content flex flex-col items-center p-2 gap-1.5">
-                <div class="flex gap-1">
-                  <div class="bg-primary w-5 h-5 rounded-lg"></div>
-                  <div class="bg-secondary w-5 h-5 rounded-lg"></div>
-                  <div class="bg-accent w-5 h-5 rounded-lg"></div>
-                  <div class="bg-neutral w-5 h-5 rounded-lg"></div>
-                </div>
-                <div class="font-bold text-xs truncate">${t(THEME_NAME_KEY[name])}</div>
-              </div>
-            </div>
+          <label class="flex items-center gap-3 p-2 rounded-box hover:bg-base-200 cursor-pointer transition-colors" data-theme-set="${name}">
+            <input type="radio" name="theme-radio" value="${name}" class="radio radio-primary shrink-0" ${checked ? "checked" : ""} />
+            <span class="flex-1 text-sm">${t(THEME_NAME_KEY[name])}</span>
+            <span class="w-4 h-4 rounded-full bg-primary" data-theme="${name}"></span>
           </label>`;
       },
     ).join("");
