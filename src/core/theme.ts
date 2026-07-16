@@ -120,12 +120,13 @@ const THEME_KEY = "mc-toolbox.theme";
 type ThemeChangeCallback = (theme: Theme) => void;
 const listeners = new Set<ThemeChangeCallback>();
 
-/** 当前主题（localStorage 优先，否则按系统偏好取 light/dark/minecraft-dark） */
+/** 当前主题（localStorage 优先，否则按系统偏好取 light/dark） */
 export function getTheme(): Theme {
   const saved = localStorage.getItem(THEME_KEY) as Theme | null;
   if (saved && THEMES.includes(saved)) return saved;
-  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  return prefersDark ? "minecraft-dark" : "minecraft";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 /** 应用主题到 <html data-theme> 并持久化 */
@@ -135,10 +136,9 @@ export function applyTheme(theme: Theme): void {
   for (const cb of listeners) cb(theme);
 }
 
-/** 顶栏快速切换：在 minecraft / minecraft-dark 之间切换 */
+/** 顶栏快速切换：在 light / dark 之间切换 */
 export function toggleMode(): Theme {
-  const current = getTheme();
-  const next: Theme = current === "minecraft" ? "minecraft-dark" : "minecraft";
+  const next: Theme = getTheme() === "dark" ? "light" : "dark";
   applyTheme(next);
   return next;
 }
