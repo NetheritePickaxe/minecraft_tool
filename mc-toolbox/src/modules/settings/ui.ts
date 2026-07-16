@@ -214,9 +214,15 @@ export function createUi(container: HTMLElement): SettingsUi {
   function renderThemeButtons(): void {
     const current = getTheme();
     themeList.innerHTML = THEMES.map(
-      (name) =>
-        `<button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 ${name === current ? "btn-active" : ""}" data-theme-set="${name}" data-theme="${name}">
-          <span class="w-5 h-5 rounded-full bg-primary border border-base-300"></span>
+      (name) => `
+        <button class="btn btn-sm flex-col gap-1.5 h-auto py-2.5 ${name === current ? "btn-active" : ""}" data-theme-set="${name}">
+          <!-- 四色预览（参考 DaisyUI 官网主题列表：primary/secondary/accent/neutral） -->
+          <div data-theme="${name}" class="flex gap-1">
+            <span class="w-3.5 h-3.5 rounded bg-primary"></span>
+            <span class="w-3.5 h-3.5 rounded bg-secondary"></span>
+            <span class="w-3.5 h-3.5 rounded bg-accent"></span>
+            <span class="w-3.5 h-3.5 rounded bg-neutral"></span>
+          </div>
           <span class="text-xs">${t(THEME_NAME_KEY[name])}</span>
         </button>`,
     ).join("");
