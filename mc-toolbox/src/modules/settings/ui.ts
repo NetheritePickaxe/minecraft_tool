@@ -302,8 +302,8 @@ export function createUi(container: HTMLElement): SettingsUi {
         return `
           <label class="cursor-pointer">
             <input type="radio" name="radius-${key}" value="${level}" class="peer sr-only radius-opt" data-radius-key="${key}" data-radius-level="${level}" ${checked ? "checked" : ""} />
-            <div class="bg-base-200 rounded-box p-2 flex items-center justify-center aspect-square transition-all">
-              <div class="w-full h-full bg-base-300 border-2 border-base-300 transition-all peer-checked:border-primary peer-checked:bg-base-100" style="border-top-right-radius: ${value};"></div>
+            <div class="bg-base-200 rounded-box p-2 flex items-center justify-center aspect-square transition-all peer-checked:ring-2 peer-checked:ring-primary peer-checked:bg-primary/5">
+              <div class="w-8 h-8 bg-base-300 border-2 border-base-300 transition-all peer-checked:border-primary peer-checked:bg-base-100" style="border-top-right-radius: ${value};"></div>
             </div>
           </label>`;
       },

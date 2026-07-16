@@ -148,7 +148,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       </main>
 
       <!-- 底部导航：MD3 Navigation Bar 风格 -->
-      <div class="fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-200 px-6 pt-2 pb-3 flex justify-center gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div class="fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-200 px-6 pt-2 pb-3 flex justify-around gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button id="nav-home" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors bg-primary/10 text-primary" data-nav="home">
           <i data-lucide="home" class="w-6 h-6"></i>
           <span class="text-xs font-medium" data-i18n="app.home"></span>
