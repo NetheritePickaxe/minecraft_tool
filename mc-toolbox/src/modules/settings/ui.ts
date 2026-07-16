@@ -217,14 +217,14 @@ export function createUi(container: HTMLElement): SettingsUi {
       (name) => {
         const checked = name === current;
         return `
-          <label class="flex items-center gap-3 p-2 rounded-box hover:bg-base-200 cursor-pointer transition-colors" data-theme-set="${name}">
+          <label class="flex items-center gap-3 p-2 rounded-box cursor-pointer transition-colors" data-theme-set="${name}">
             <input type="radio" name="theme-radio" value="${name}" class="radio radio-primary shrink-0" ${checked ? "checked" : ""} />
             <span class="flex-1 text-sm">${t(THEME_NAME_KEY[name])}</span>
             <div class="flex gap-1" data-theme="${name}">
-              <span class="w-3 h-3 rounded-sm bg-primary"></span>
-              <span class="w-3 h-3 rounded-sm bg-secondary"></span>
-              <span class="w-3 h-3 rounded-sm bg-accent"></span>
-              <span class="w-3 h-3 rounded-sm bg-neutral"></span>
+              <span class="w-5 h-5 rounded bg-primary"></span>
+              <span class="w-5 h-5 rounded bg-secondary"></span>
+              <span class="w-5 h-5 rounded bg-accent"></span>
+              <span class="w-5 h-5 rounded bg-neutral"></span>
             </div>
           </label>`;
       },
