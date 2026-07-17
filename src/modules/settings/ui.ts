@@ -96,6 +96,8 @@ export function createUi(container: HTMLElement): SettingsUi {
   const isApp = isTauri();
   let version = "0.0.0";
   let updateState: UpdateState = { kind: "idle" };
+  let lightSlotExpanded = false;
+  let darkSlotExpanded = false;
 
   container.innerHTML = `
     <div class="max-w-2xl mx-auto space-y-3">
@@ -125,19 +127,10 @@ export function createUi(container: HTMLElement): SettingsUi {
             <div class="join w-full" id="set-theme-mode"></div>
           </div>
 
-          <!-- 浅色主题 -->
-          <div class="mt-4">
-            <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.light-title"></div>
-            <div class="grid grid-cols-3 gap-2" id="set-light-themes"></div>
-          </div>
+          <!-- 主题选择区：根据模式动态渲染（浅色网格 / 深色网格 / 双槽位） -->
+          <div class="mt-4" id="set-theme-picker"></div>
 
-          <!-- 深色主题 -->
-          <div class="mt-4">
-            <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.dark-title"></div>
-            <div class="grid grid-cols-3 gap-2" id="set-dark-themes"></div>
-          </div>
-
-          <!-- 自定义主题 -->
+          <!-- 自定义主题：单独分类 -->
           <div class="mt-4 pt-4 border-t border-base-200">
             <div class="flex items-center justify-between mb-3">
               <div class="text-sm font-medium" data-i18n="modules.settings.theme.custom-title"></div>
@@ -264,8 +257,7 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   const localeList = qs<HTMLElement>(container, "#set-locale-list");
   const themeModeBox = qs<HTMLElement>(container, "#set-theme-mode");
-  const lightThemeGrid = qs<HTMLElement>(container, "#set-light-themes");
-  const darkThemeGrid = qs<HTMLElement>(container, "#set-dark-themes");
+  const themePickerBox = qs<HTMLElement>(container, "#set-theme-picker");
   const customColorsBox = qs<HTMLElement>(container, "#custom-colors");
   const customModeSelect = qs<HTMLSelectElement>(container, "#custom-mode");
   const customSaveBtn = qs<HTMLButtonElement>(container, "#custom-save");
@@ -285,7 +277,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     });
     renderLocaleList();
     renderThemeMode();
-    renderThemeGrids();
+    renderThemePicker();
     renderCustomTheme();
     renderNavStyle();
     if (platformEl) platformEl.textContent = platformLabel(platform);
@@ -343,38 +335,115 @@ export function createUi(container: HTMLElement): SettingsUi {
     });
   }
 
-  // ============== 主题卡片网格 ==============
+  // ============== 主题选择区 ==============
 
-  function renderThemeGrids(): void {
+  function themeDisplayName(name: Theme): string {
+    if (name === "custom") return t("modules.settings.theme.name.custom");
+    return t(THEME_NAME_KEY[name as Exclude<Theme, "custom">]);
+  }
+
+  /** 槽位缩略图：4 个小圆点展示主题色 */
+  function renderSlotSwatch(theme: Theme): string {
+    if (theme === "custom") {
+      const config = getCustomTheme();
+      if (config) {
+        return `
+          <span class="flex gap-0.5">
+            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.primary}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.secondary}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.accent}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.neutral}"></span>
+          </span>`;
+      }
+    }
+    return `
+      <span class="flex gap-0.5" data-theme="${theme}">
+        <span class="w-3 h-3 rounded-full bg-primary border border-base-content/10"></span>
+        <span class="w-3 h-3 rounded-full bg-secondary border border-base-content/10"></span>
+        <span class="w-3 h-3 rounded-full bg-accent border border-base-content/10"></span>
+        <span class="w-3 h-3 rounded-full bg-neutral border border-base-content/10"></span>
+      </span>`;
+  }
+
+  /** 根据当前模式渲染主题选择区 */
+  function renderThemePicker(): void {
+    const mode = getThemeMode();
     const currentLight = getDefaultLightTheme();
     const currentDark = getDefaultDarkTheme();
 
-    lightThemeGrid.innerHTML = LIGHT_THEMES.map((name) =>
-      renderThemeCard(name, name === currentLight),
-    ).join("");
-
-    darkThemeGrid.innerHTML = DARK_THEMES.map((name) =>
-      renderThemeCard(name, name === currentDark),
-    ).join("");
-
-    // 如果自定义主题存在，加到对应列表末尾
-    const custom = getCustomTheme();
-    if (custom) {
-      const isLight = custom.mode === "light";
-      const target = isLight ? lightThemeGrid : darkThemeGrid;
-      const current = isLight ? currentLight : currentDark;
-      target.insertAdjacentHTML("beforeend", renderThemeCard("custom", current === "custom"));
+    let html = "";
+    if (mode === "light") {
+      html = `
+        <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.light-title"></div>
+        <div class="grid grid-cols-3 gap-2">
+          ${LIGHT_THEMES.map((name) =>
+            renderThemeCard(name, name === currentLight, "light"),
+          ).join("")}
+        </div>`;
+    } else if (mode === "dark") {
+      html = `
+        <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.dark-title"></div>
+        <div class="grid grid-cols-3 gap-2">
+          ${DARK_THEMES.map((name) =>
+            renderThemeCard(name, name === currentDark, "dark"),
+          ).join("")}
+        </div>`;
+    } else {
+      // auto：两个槽位，点击展开对应网格
+      html = `
+        <div class="collapse collapse-arrow bg-base-200 rounded-2xl mb-2">
+          <input type="checkbox" ${lightSlotExpanded ? "checked" : ""} data-slot-toggle="light" />
+          <div class="collapse-title font-medium flex items-center gap-2 min-h-0 py-3">
+            <span class="text-sm" data-i18n="modules.settings.theme.light-title"></span>
+            <span class="ml-auto flex items-center gap-2 mr-1">
+              ${renderSlotSwatch(currentLight)}
+              <span class="text-xs opacity-60">${escapeHtml(themeDisplayName(currentLight))}</span>
+            </span>
+          </div>
+          <div class="collapse-content">
+            <div class="grid grid-cols-3 gap-2 mt-2">
+              ${LIGHT_THEMES.map((name) =>
+                renderThemeCard(name, name === currentLight, "light"),
+              ).join("")}
+            </div>
+          </div>
+        </div>
+        <div class="collapse collapse-arrow bg-base-200 rounded-2xl">
+          <input type="checkbox" ${darkSlotExpanded ? "checked" : ""} data-slot-toggle="dark" />
+          <div class="collapse-title font-medium flex items-center gap-2 min-h-0 py-3">
+            <span class="text-sm" data-i18n="modules.settings.theme.dark-title"></span>
+            <span class="ml-auto flex items-center gap-2 mr-1">
+              ${renderSlotSwatch(currentDark)}
+              <span class="text-xs opacity-60">${escapeHtml(themeDisplayName(currentDark))}</span>
+            </span>
+          </div>
+          <div class="collapse-content">
+            <div class="grid grid-cols-3 gap-2 mt-2">
+              ${DARK_THEMES.map((name) =>
+                renderThemeCard(name, name === currentDark, "dark"),
+              ).join("")}
+            </div>
+          </div>
+        </div>`;
     }
+
+    themePickerBox.innerHTML = html;
+    // 渲染后填充 i18n 文本
+    themePickerBox.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+      el.textContent = t(el.dataset.i18n!);
+    });
   }
 
-  function renderThemeCard(name: Theme, checked: boolean): string {
+  function renderThemeCard(
+    name: Theme,
+    checked: boolean,
+    slot: "light" | "dark",
+  ): string {
     const light = isLightTheme(name);
     const borderColor = light ? "border-black" : "border-white";
-    const displayName = name === "custom"
-      ? t("modules.settings.theme.name.custom")
-      : t(THEME_NAME_KEY[name as Exclude<Theme, "custom">]);
+    const displayName = themeDisplayName(name);
     return `
-      <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}">
+      <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}" data-theme-slot="${slot}">
         <div class="rounded-3xl p-2 transition-all ${checked ? "ring-2 ring-primary" : ""}">
           <div class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl bg-base-200 p-2" data-theme="${name}">
             <span class="aspect-square rounded-full bg-primary border ${borderColor}"></span>
@@ -560,7 +629,6 @@ export function createUi(container: HTMLElement): SettingsUi {
     );
     if (!radio) return;
     setThemeMode(radio.value as ThemeMode);
-    renderThemeGrids();
   });
 
   // 底边栏样式选择
@@ -572,25 +640,30 @@ export function createUi(container: HTMLElement): SettingsUi {
     setNavStyle(radio.value as NavStyle);
   });
 
-  // 浅色主题选择
-  lightThemeGrid.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
-      "[data-theme-set]",
-    );
-    if (!btn) return;
-    setDefaultLightTheme(btn.dataset.themeSet as Theme);
-    renderThemeGrids();
-  });
-
-  // 深色主题选择
-  darkThemeGrid.addEventListener("click", (e) => {
+  // 主题卡片选择（事件委托）
+  themePickerBox.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
       "[data-theme-set]",
     );
     if (!btn) return;
     const theme = btn.dataset.themeSet as Theme;
-    setDefaultDarkTheme(theme);
-    renderThemeGrids();
+    const slot = btn.dataset.themeSlot as "light" | "dark";
+    if (slot === "light") {
+      setDefaultLightTheme(theme);
+    } else {
+      setDefaultDarkTheme(theme);
+    }
+  });
+
+  // 槽位展开/收起状态同步
+  themePickerBox.addEventListener("change", (e) => {
+    const toggle = (e.target as HTMLElement).closest<HTMLInputElement>(
+      "[data-slot-toggle]",
+    );
+    if (!toggle) return;
+    const slot = toggle.dataset.slotToggle;
+    if (slot === "light") lightSlotExpanded = toggle.checked;
+    if (slot === "dark") darkSlotExpanded = toggle.checked;
   });
 
   // 自定义主题：颜色选择器实时更新
@@ -632,11 +705,15 @@ export function createUi(container: HTMLElement): SettingsUi {
     applyConfigToEditor(colors);
   });
 
-  // 自定义主题保存
+  // 自定义主题保存：保存后自动设为对应模式的默认主题
   customSaveBtn.addEventListener("click", () => {
     const config = getEditingConfig();
     setCustomTheme(config);
-    renderThemeGrids();
+    if (config.mode === "light") {
+      setDefaultLightTheme("custom");
+    } else {
+      setDefaultDarkTheme("custom");
+    }
   });
 
   container.addEventListener("click", async (e) => {
@@ -756,7 +833,7 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   const offTheme = onThemeChange(() => {
     renderThemeMode();
-    renderThemeGrids();
+    renderThemePicker();
     container.dispatchEvent(
       new CustomEvent("settings:icons-stale", { bubbles: true }),
     );
