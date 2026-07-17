@@ -13,7 +13,6 @@ import {
   onThemeChange,
   LIGHT_THEMES,
   DARK_THEMES,
-  isLightTheme,
   THEME_NAME_KEY,
   getCustomTheme,
   setCustomTheme,
@@ -23,6 +22,7 @@ import {
   type Theme,
   type ThemeMode,
   type CustomThemeConfig,
+  type CustomRadius,
 } from "../../core/theme";
 import {
   detectPlatform,
@@ -65,10 +65,23 @@ const NAV_STYLES: Array<{ style: NavStyle; key: string }> = [
   { style: "floating", key: "modules.settings.nav.floating" },
 ];
 
-const CUSTOM_COLORS: Array<{
-  key: keyof Omit<CustomThemeConfig, "mode">;
-  label: string;
-}> = [
+const RADIUS_OPTIONS: Array<{ value: CustomRadius; key: string }> = [
+  { value: "none", key: "modules.settings.theme.custom.radius.none" },
+  { value: "sm", key: "modules.settings.theme.custom.radius.sm" },
+  { value: "md", key: "modules.settings.theme.custom.radius.md" },
+  { value: "lg", key: "modules.settings.theme.custom.radius.lg" },
+  { value: "full", key: "modules.settings.theme.custom.radius.full" },
+];
+
+type ColorKey =
+  | "primary"
+  | "secondary"
+  | "accent"
+  | "neutral"
+  | "base100"
+  | "baseContent";
+
+const CUSTOM_COLORS: Array<{ key: ColorKey; label: string }> = [
   { key: "primary", label: "modules.settings.theme.custom.primary" },
   { key: "secondary", label: "modules.settings.theme.custom.secondary" },
   { key: "accent", label: "modules.settings.theme.custom.accent" },
@@ -140,6 +153,23 @@ export function createUi(container: HTMLElement): SettingsUi {
               </button>
             </div>
             <div id="set-custom-theme" class="space-y-3">
+              <!-- 卡片预览：与普通主题卡片样式一致，主题名可编辑 -->
+              <div class="flex justify-center">
+                <div class="p-1 w-28">
+                  <div class="rounded-3xl p-2">
+                    <div id="custom-preview-swatches" class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl p-2"></div>
+                    <input id="custom-name" type="text" maxlength="12" class="input input-xs input-ghost w-full text-center font-medium px-1" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 主题名输入 -->
+              <div class="flex items-center gap-2">
+                <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.name"></span>
+                <input id="custom-name-input" type="text" maxlength="12" class="input input-sm input-bordered w-32 text-center" />
+              </div>
+
+              <!-- 模式选择 -->
               <div class="flex items-center gap-2">
                 <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.mode"></span>
                 <select id="custom-mode" class="select select-sm select-bordered">
@@ -147,17 +177,16 @@ export function createUi(container: HTMLElement): SettingsUi {
                   <option value="dark" data-i18n="modules.settings.theme.mode.dark"></option>
                 </select>
               </div>
-              <div id="custom-colors" class="space-y-2"></div>
-              <!-- 实时预览 -->
-              <div class="p-3 bg-base-200/60 rounded-2xl">
-                <div class="text-xs opacity-60 mb-2" data-i18n="modules.settings.theme.custom.preview"></div>
-                <div class="grid grid-cols-4 gap-2">
-                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-primary"></div>
-                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-secondary"></div>
-                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-accent"></div>
-                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-neutral"></div>
-                </div>
+
+              <!-- 圆角选择 -->
+              <div class="flex items-center gap-2">
+                <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.radius"></span>
+                <div class="join" id="custom-radius"></div>
               </div>
+
+              <!-- 颜色编辑 -->
+              <div id="custom-colors" class="space-y-2"></div>
+
               <button id="custom-save" class="btn btn-sm btn-primary w-full" data-i18n="modules.settings.theme.custom.save"></button>
             </div>
           </div>
@@ -263,6 +292,10 @@ export function createUi(container: HTMLElement): SettingsUi {
   const customSaveBtn = qs<HTMLButtonElement>(container, "#custom-save");
   const navStyleBox = qs<HTMLElement>(container, "#set-nav-style");
   const customFromCurrentBtn = qs<HTMLButtonElement>(container, "#custom-from-current");
+  const customPreviewSwatches = qs<HTMLElement>(container, "#custom-preview-swatches");
+  const customNameInput = qs<HTMLInputElement>(container, "#custom-name-input");
+  const customNamePreview = qs<HTMLInputElement>(container, "#custom-name");
+  const customRadiusBox = qs<HTMLElement>(container, "#custom-radius");
   const versionEl = container.querySelector<HTMLElement>("#set-version");
   const platformEl = container.querySelector<HTMLElement>("#set-platform");
   const checkBtn = container.querySelector<HTMLElement>("#set-check-card");
@@ -279,6 +312,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     renderThemeMode();
     renderThemePicker();
     renderCustomTheme();
+    renderCustomRadius();
     renderNavStyle();
     if (platformEl) platformEl.textContent = platformLabel(platform);
     if (versionEl) versionEl.textContent = version;
@@ -349,19 +383,19 @@ export function createUi(container: HTMLElement): SettingsUi {
       if (config) {
         return `
           <span class="flex gap-0.5">
-            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.primary}"></span>
-            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.secondary}"></span>
-            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.accent}"></span>
-            <span class="w-3 h-3 rounded-full border border-base-content/10" style="background:${config.neutral}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/15" style="background:${config.primary}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/15" style="background:${config.secondary}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/15" style="background:${config.accent}"></span>
+            <span class="w-3 h-3 rounded-full border border-base-content/15" style="background:${config.neutral}"></span>
           </span>`;
       }
     }
     return `
       <span class="flex gap-0.5" data-theme="${theme}">
-        <span class="w-3 h-3 rounded-full bg-primary border border-base-content/10"></span>
-        <span class="w-3 h-3 rounded-full bg-secondary border border-base-content/10"></span>
-        <span class="w-3 h-3 rounded-full bg-accent border border-base-content/10"></span>
-        <span class="w-3 h-3 rounded-full bg-neutral border border-base-content/10"></span>
+        <span class="w-3 h-3 rounded-full bg-primary border border-base-content/15"></span>
+        <span class="w-3 h-3 rounded-full bg-secondary border border-base-content/15"></span>
+        <span class="w-3 h-3 rounded-full bg-accent border border-base-content/15"></span>
+        <span class="w-3 h-3 rounded-full bg-neutral border border-base-content/15"></span>
       </span>`;
   }
 
@@ -439,17 +473,15 @@ export function createUi(container: HTMLElement): SettingsUi {
     checked: boolean,
     slot: "light" | "dark",
   ): string {
-    const light = isLightTheme(name);
-    const borderColor = light ? "border-black" : "border-white";
     const displayName = themeDisplayName(name);
     return `
       <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}" data-theme-slot="${slot}">
         <div class="rounded-3xl p-2 transition-all ${checked ? "ring-2 ring-primary" : ""}">
           <div class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl bg-base-200 p-2" data-theme="${name}">
-            <span class="aspect-square rounded-full bg-primary border ${borderColor}"></span>
-            <span class="aspect-square rounded-full bg-secondary border ${borderColor}"></span>
-            <span class="aspect-square rounded-full bg-accent border ${borderColor}"></span>
-            <span class="aspect-square rounded-full bg-neutral border ${borderColor}"></span>
+            <span class="aspect-square rounded-full bg-primary border border-base-content/15"></span>
+            <span class="aspect-square rounded-full bg-secondary border border-base-content/15"></span>
+            <span class="aspect-square rounded-full bg-accent border border-base-content/15"></span>
+            <span class="aspect-square rounded-full bg-neutral border border-base-content/15"></span>
           </div>
           <div class="font-medium text-xs text-center truncate">${displayName}</div>
         </div>
@@ -462,12 +494,14 @@ export function createUi(container: HTMLElement): SettingsUi {
   function getEditingConfig(): CustomThemeConfig {
     const config: CustomThemeConfig = {
       mode: customModeSelect.value as "light" | "dark",
+      name: customNameInput.value.trim() || "Custom",
       primary: "#000000",
       secondary: "#000000",
       accent: "#000000",
       neutral: "#000000",
       base100: "#000000",
       baseContent: "#000000",
+      radius: getEditingRadius(),
     };
     for (const c of CUSTOM_COLORS) {
       const input = customColorsBox.querySelector<HTMLInputElement>(
@@ -480,9 +514,21 @@ export function createUi(container: HTMLElement): SettingsUi {
     return config;
   }
 
+  /** 从 join 单选获取当前选中的圆角 */
+  function getEditingRadius(): CustomRadius {
+    const checked = customRadiusBox.querySelector<HTMLInputElement>(
+      "input[name='custom-radius']:checked",
+    );
+    if (checked && ["none", "sm", "md", "lg", "full"].includes(checked.value)) {
+      return checked.value as CustomRadius;
+    }
+    return "lg";
+  }
+
   function renderCustomTheme(): void {
     const config = getCustomTheme() ?? DEFAULT_CUSTOM;
     customModeSelect.value = config.mode;
+    customNameInput.value = config.name;
     customColorsBox.innerHTML = CUSTOM_COLORS.map((c) => {
       const value = config[c.key];
       return `
@@ -497,9 +543,19 @@ export function createUi(container: HTMLElement): SettingsUi {
     updatePreview();
   }
 
+  /** 渲染圆角选择器 */
+  function renderCustomRadius(): void {
+    const config = getCustomTheme() ?? DEFAULT_CUSTOM;
+    customRadiusBox.innerHTML = RADIUS_OPTIONS.map(
+      (r) =>
+        `<input class="join-item btn btn-xs" type="radio" name="custom-radius" value="${r.value}" aria-label="${t(r.key)}" ${r.value === config.radius ? "checked" : ""} />`,
+    ).join("");
+  }
+
   /** 把指定配置写入编辑器 UI（不保存） */
   function applyConfigToEditor(config: CustomThemeConfig): void {
     customModeSelect.value = config.mode;
+    customNameInput.value = config.name;
     for (const c of CUSTOM_COLORS) {
       const value = config[c.key];
       const picker = customColorsBox.querySelector<HTMLInputElement>(
@@ -513,17 +569,29 @@ export function createUi(container: HTMLElement): SettingsUi {
       const label = picker?.parentElement;
       if (label) label.style.background = value;
     }
+    // 更新圆角选择
+    customRadiusBox.querySelectorAll<HTMLInputElement>("input[name='custom-radius']").forEach((input) => {
+      input.checked = input.value === config.radius;
+    });
     updatePreview();
   }
 
-  /** 更新实时预览色块 */
+  /** 更新预览卡片（与普通主题卡片一致的样式） */
   function updatePreview(): void {
     const config = getEditingConfig();
-    const keys = ["primary", "secondary", "accent", "neutral"] as const;
-    for (const key of keys) {
-      const el = container.querySelector<HTMLElement>(`#preview-${key}`);
-      if (el) el.style.background = config[key];
-    }
+    // 4 个色块 + 背景色，文字色用 baseContent
+    customPreviewSwatches.style.background = config.base100;
+    customPreviewSwatches.style.color = config.baseContent;
+    const swatchKeys = ["primary", "secondary", "accent", "neutral"] as const;
+    customPreviewSwatches.innerHTML = swatchKeys
+      .map(
+        (key) =>
+          `<span class="aspect-square rounded-full border border-base-content/15" style="background:${config[key]}"></span>`,
+      )
+      .join("");
+    // 主题名预览（颜色用 baseContent）
+    customNamePreview.value = config.name;
+    customNamePreview.style.color = config.baseContent;
   }
 
   // ============== 更新状态 ==============
@@ -696,6 +764,16 @@ export function createUi(container: HTMLElement): SettingsUi {
         updatePreview();
       }
     }
+  });
+
+  // 自定义主题：主题名输入同步到预览
+  customNameInput.addEventListener("input", () => {
+    customNamePreview.value = customNameInput.value || "Custom";
+  });
+
+  // 自定义主题：圆角选择实时更新预览
+  customRadiusBox.addEventListener("change", () => {
+    updatePreview();
   });
 
   // 自定义主题：从当前激活主题读取颜色

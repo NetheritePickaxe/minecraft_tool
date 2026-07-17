@@ -236,26 +236,41 @@ function notifyListeners(): void {
 
 // ============== 自定义主题 ==============
 
+export type CustomRadius = "none" | "sm" | "md" | "lg" | "full";
+
 export interface CustomThemeConfig {
   mode: "light" | "dark";
+  name: string;
   primary: string;
   secondary: string;
   accent: string;
   neutral: string;
   base100: string;
   baseContent: string;
+  radius: CustomRadius;
 }
+
+/** 圆角预设对应的 rem 值（DaisyUI v4 --radius-* 变量） */
+export const RADIUS_VALUES: Record<CustomRadius, string> = {
+  none: "0rem",
+  sm: "0.25rem",
+  md: "0.5rem",
+  lg: "1rem",
+  full: "2rem",
+};
 
 const CUSTOM_THEME_KEY = "mc-toolbox.custom-theme";
 
 const DEFAULT_CUSTOM: CustomThemeConfig = {
   mode: "light",
+  name: "Custom",
   primary: "#5d9e38",
   secondary: "#8b6914",
   accent: "#c41e3a",
   neutral: "#707070",
   base100: "#c6c6c6",
   baseContent: "#2b2b2b",
+  radius: "lg",
 };
 
 export { DEFAULT_CUSTOM };
@@ -362,6 +377,7 @@ export function applyCustomThemeCss(): void {
   const b2 = hexToOklch(darken(config.base100, 0.07));
   const b3 = hexToOklch(darken(config.base100, 0.14));
   const bc = hexToOklch(config.baseContent);
+  const radius = RADIUS_VALUES[config.radius];
 
   style.textContent = `
     [data-theme="custom"] {
@@ -386,6 +402,9 @@ export function applyCustomThemeCss(): void {
       --wac: ${hexToOklch("#ffffff")};
       --er: ${hexToOklch("#c41e3a")};
       --erc: ${hexToOklch("#ffffff")};
+      --radius-selector: ${radius};
+      --radius-field: ${radius};
+      --radius-box: ${radius};
     }
   `;
 }
@@ -425,14 +444,17 @@ export function readThemeColors(theme: Theme): CustomThemeConfig {
     '<span class="text-base-content"></span>';
   document.body.appendChild(probe);
   const spans = probe.querySelectorAll("span");
+  const saved = getCustomTheme();
   const result: CustomThemeConfig = {
     mode: isLightTheme(theme) ? "light" : "dark",
+    name: theme === "custom" ? (saved?.name ?? "Custom") : "Custom",
     primary: rgbToHex(getComputedStyle(spans[0]).backgroundColor),
     secondary: rgbToHex(getComputedStyle(spans[1]).backgroundColor),
     accent: rgbToHex(getComputedStyle(spans[2]).backgroundColor),
     neutral: rgbToHex(getComputedStyle(spans[3]).backgroundColor),
     base100: rgbToHex(getComputedStyle(spans[4]).backgroundColor),
     baseContent: rgbToHex(getComputedStyle(spans[5]).color),
+    radius: theme === "custom" ? (saved?.radius ?? "lg") : "lg",
   };
   document.body.removeChild(probe);
   return result;
