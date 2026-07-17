@@ -19,7 +19,7 @@ export default {
   },
   plugins: [daisyui],
   daisyui: {
-    // 启用 DaisyUI 内置主题 + 自定义 Minecraft 主题（含深浅色）
+    // 启用 DaisyUI 全部内置主题（自定义主题通过 CSS 变量运行时注入）
     themes: [
       "light",
       "dark",
@@ -53,48 +53,7 @@ export default {
       "dim",
       "nord",
       "sunset",
-      // 自定义 Minecraft 主题
-      {
-        minecraft: {
-          primary: "#5d9e38",
-          "primary-content": "#2b4a12",
-          secondary: "#8b6914",
-          "secondary-content": "#f5deb3",
-          accent: "#c41e3a",
-          "accent-content": "#ffffff",
-          neutral: "#707070",
-          "neutral-content": "#f5f5f5",
-          "base-100": "#c6c6c6",
-          "base-200": "#a8a8a8",
-          "base-300": "#8a8a8a",
-          "base-content": "#2b2b2b",
-          info: "#4a90d9",
-          success: "#5d9e38",
-          warning: "#d4a017",
-          error: "#c41e3a",
-        },
-      },
-      {
-        "minecraft-dark": {
-          primary: "#7bc743",
-          "primary-content": "#1a3309",
-          secondary: "#b8860b",
-          "secondary-content": "#fff8dc",
-          accent: "#e74c3c",
-          "accent-content": "#ffffff",
-          neutral: "#4a4a4a",
-          "neutral-content": "#e0e0e0",
-          "base-100": "#2b2b2b",
-          "base-200": "#3d3d3d",
-          "base-300": "#4f4f4f",
-          "base-content": "#e0e0e0",
-          info: "#5dade2",
-          success: "#7bc743",
-          warning: "#f39c12",
-          error: "#e74c3c",
-        },
-      },
     ],
-    darkTheme: "minecraft-dark",
+    darkTheme: "dark",
   },
 };

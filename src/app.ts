@@ -141,17 +141,17 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：MD3 Navigation Bar -->
-      <div class="fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-200 px-6 pt-2 pb-3 flex justify-around gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button id="nav-home" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors bg-primary/10 text-primary" data-nav="home">
-          <i data-lucide="home" class="w-6 h-6"></i>
-          <span class="text-xs font-medium" data-i18n="app.home"></span>
+      <!-- 底部导航：DaisyUI btm-nav -->
+      <div class="btm-nav btm-nav-sm border-t border-base-200 bg-base-100 z-30">
+        <button id="nav-home" class="active text-primary" data-nav="home">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-xs" data-i18n="app.home"></span>
         </button>
         ${
           settingsModule
-            ? `<button id="nav-settings" class="flex flex-col items-center justify-center gap-1 min-w-[64px] h-16 rounded-2xl px-3 transition-colors text-base-content/70 hover:bg-base-200" data-nav="settings">
-          <i data-lucide="settings" class="w-6 h-6"></i>
-          <span class="text-xs font-medium" data-i18n="app.settings"></span>
+            ? `<button id="nav-settings" class="text-base-content/60" data-nav="settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-xs" data-i18n="app.settings"></span>
         </button>`
             : ""
         }
@@ -235,13 +235,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   function setNav(tab: NavTab): void {
     const activate = (btn: HTMLElement, active: boolean) => {
       btn.classList.toggle("active", active);
-      if (active) {
-        btn.classList.add("text-primary", "border-primary");
-        btn.classList.remove("text-base-content/50");
-      } else {
-        btn.classList.remove("text-primary", "border-primary");
-        btn.classList.add("text-base-content/50");
-      }
+      btn.classList.toggle("text-primary", active);
+      btn.classList.toggle("text-base-content/60", !active);
     };
     activate(navHome, tab === "home");
     if (navSettings) activate(navSettings, tab === "settings");
