@@ -17,6 +17,9 @@ import {
   THEME_NAME_KEY,
   getCustomTheme,
   setCustomTheme,
+  getTheme,
+  readThemeColors,
+  DEFAULT_CUSTOM,
   type Theme,
   type ThemeMode,
   type CustomThemeConfig,
@@ -136,7 +139,13 @@ export function createUi(container: HTMLElement): SettingsUi {
 
           <!-- 自定义主题 -->
           <div class="mt-4 pt-4 border-t border-base-200">
-            <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.custom-title"></div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="text-sm font-medium" data-i18n="modules.settings.theme.custom-title"></div>
+              <button id="custom-from-current" class="btn btn-xs btn-ghost gap-1">
+                <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                <span class="text-xs" data-i18n="modules.settings.theme.custom.from-current"></span>
+              </button>
+            </div>
             <div id="set-custom-theme" class="space-y-3">
               <div class="flex items-center gap-2">
                 <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.mode"></span>
@@ -145,7 +154,17 @@ export function createUi(container: HTMLElement): SettingsUi {
                   <option value="dark" data-i18n="modules.settings.theme.mode.dark"></option>
                 </select>
               </div>
-              <div class="grid grid-cols-2 gap-3" id="custom-colors"></div>
+              <div id="custom-colors" class="space-y-2"></div>
+              <!-- 实时预览 -->
+              <div class="p-3 bg-base-200/60 rounded-2xl">
+                <div class="text-xs opacity-60 mb-2" data-i18n="modules.settings.theme.custom.preview"></div>
+                <div class="grid grid-cols-4 gap-2">
+                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-primary"></div>
+                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-secondary"></div>
+                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-accent"></div>
+                  <div class="aspect-square rounded-xl border border-base-content/10" id="preview-neutral"></div>
+                </div>
+              </div>
               <button id="custom-save" class="btn btn-sm btn-primary w-full" data-i18n="modules.settings.theme.custom.save"></button>
             </div>
           </div>
@@ -251,6 +270,7 @@ export function createUi(container: HTMLElement): SettingsUi {
   const customModeSelect = qs<HTMLSelectElement>(container, "#custom-mode");
   const customSaveBtn = qs<HTMLButtonElement>(container, "#custom-save");
   const navStyleBox = qs<HTMLElement>(container, "#set-nav-style");
+  const customFromCurrentBtn = qs<HTMLButtonElement>(container, "#custom-from-current");
   const versionEl = container.querySelector<HTMLElement>("#set-version");
   const platformEl = container.querySelector<HTMLElement>("#set-platform");
   const checkBtn = container.querySelector<HTMLElement>("#set-check-card");
@@ -357,10 +377,10 @@ export function createUi(container: HTMLElement): SettingsUi {
       <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}">
         <div class="rounded-3xl p-2 transition-all ${checked ? "ring-2 ring-primary" : ""}">
           <div class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl bg-base-200 p-2" data-theme="${name}">
-            <span class="aspect-square rounded-full bg-primary border-2 ${borderColor}"></span>
-            <span class="aspect-square rounded-full bg-secondary border-2 ${borderColor}"></span>
-            <span class="aspect-square rounded-full bg-accent border-2 ${borderColor}"></span>
-            <span class="aspect-square rounded-full bg-neutral border-2 ${borderColor}"></span>
+            <span class="aspect-square rounded-full bg-primary border ${borderColor}"></span>
+            <span class="aspect-square rounded-full bg-secondary border ${borderColor}"></span>
+            <span class="aspect-square rounded-full bg-accent border ${borderColor}"></span>
+            <span class="aspect-square rounded-full bg-neutral border ${borderColor}"></span>
           </div>
           <div class="font-medium text-xs text-center truncate">${displayName}</div>
         </div>
@@ -369,29 +389,72 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   // ============== 自定义主题编辑器 ==============
 
-  function renderCustomTheme(): void {
-    const config = getCustomTheme();
-    customModeSelect.value = config?.mode ?? "light";
-    customColorsBox.innerHTML = CUSTOM_COLORS.map(
-      (c) => `
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="color" id="custom-color-${c.key}" value="${config?.[c.key] ?? "#000000"}" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-2 border-base-300" />
-          <span class="text-xs">${t(c.label)}</span>
-        </label>`,
-    ).join("");
-  }
-
-  function collectCustomConfig(): CustomThemeConfig {
+  /** 获取编辑器当前编辑中的配置（未保存） */
+  function getEditingConfig(): CustomThemeConfig {
     const config: CustomThemeConfig = {
       mode: customModeSelect.value as "light" | "dark",
-      primary: qs<HTMLInputElement>(container, "#custom-color-primary").value,
-      secondary: qs<HTMLInputElement>(container, "#custom-color-secondary").value,
-      accent: qs<HTMLInputElement>(container, "#custom-color-accent").value,
-      neutral: qs<HTMLInputElement>(container, "#custom-color-neutral").value,
-      base100: qs<HTMLInputElement>(container, "#custom-color-base100").value,
-      baseContent: qs<HTMLInputElement>(container, "#custom-color-baseContent").value,
+      primary: "#000000",
+      secondary: "#000000",
+      accent: "#000000",
+      neutral: "#000000",
+      base100: "#000000",
+      baseContent: "#000000",
     };
+    for (const c of CUSTOM_COLORS) {
+      const input = customColorsBox.querySelector<HTMLInputElement>(
+        `input[data-color-input="${c.key}"]`,
+      );
+      if (input && /^#[0-9a-fA-F]{6}$/.test(input.value.trim())) {
+        config[c.key] = input.value.trim();
+      }
+    }
     return config;
+  }
+
+  function renderCustomTheme(): void {
+    const config = getCustomTheme() ?? DEFAULT_CUSTOM;
+    customModeSelect.value = config.mode;
+    customColorsBox.innerHTML = CUSTOM_COLORS.map((c) => {
+      const value = config[c.key];
+      return `
+        <div class="flex items-center gap-3 p-2 bg-base-200/50 rounded-xl">
+          <label class="relative w-9 h-9 rounded-lg border border-base-content/10 shrink-0 cursor-pointer overflow-hidden" style="background:${value}">
+            <input type="color" value="${value}" data-color-picker="${c.key}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+          </label>
+          <span class="text-sm flex-1">${t(c.label)}</span>
+          <input type="text" value="${value}" data-color-input="${c.key}" class="input input-xs input-bordered w-24 font-mono text-center" maxlength="7" />
+        </div>`;
+    }).join("");
+    updatePreview();
+  }
+
+  /** 把指定配置写入编辑器 UI（不保存） */
+  function applyConfigToEditor(config: CustomThemeConfig): void {
+    customModeSelect.value = config.mode;
+    for (const c of CUSTOM_COLORS) {
+      const value = config[c.key];
+      const picker = customColorsBox.querySelector<HTMLInputElement>(
+        `input[data-color-picker="${c.key}"]`,
+      );
+      const input = customColorsBox.querySelector<HTMLInputElement>(
+        `input[data-color-input="${c.key}"]`,
+      );
+      if (picker) picker.value = value;
+      if (input) input.value = value;
+      const label = picker?.parentElement;
+      if (label) label.style.background = value;
+    }
+    updatePreview();
+  }
+
+  /** 更新实时预览色块 */
+  function updatePreview(): void {
+    const config = getEditingConfig();
+    const keys = ["primary", "secondary", "accent", "neutral"] as const;
+    for (const key of keys) {
+      const el = container.querySelector<HTMLElement>(`#preview-${key}`);
+      if (el) el.style.background = config[key];
+    }
   }
 
   // ============== 更新状态 ==============
@@ -530,9 +593,48 @@ export function createUi(container: HTMLElement): SettingsUi {
     renderThemeGrids();
   });
 
+  // 自定义主题：颜色选择器实时更新
+  customColorsBox.addEventListener("input", (e) => {
+    const picker = (e.target as HTMLElement).closest<HTMLInputElement>(
+      "input[data-color-picker]",
+    );
+    const input = (e.target as HTMLElement).closest<HTMLInputElement>(
+      "input[data-color-input]",
+    );
+    if (picker) {
+      const key = picker.dataset.colorPicker!;
+      const textInput = customColorsBox.querySelector<HTMLInputElement>(
+        `input[data-color-input="${key}"]`,
+      );
+      const label = picker.parentElement;
+      if (textInput) textInput.value = picker.value;
+      if (label) label.style.background = picker.value;
+      updatePreview();
+    } else if (input) {
+      const val = input.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        const key = input.dataset.colorInput!;
+        const pickerEl = customColorsBox.querySelector<HTMLInputElement>(
+          `input[data-color-picker="${key}"]`,
+        );
+        const label = pickerEl?.parentElement;
+        if (pickerEl) pickerEl.value = val;
+        if (label) label.style.background = val;
+        updatePreview();
+      }
+    }
+  });
+
+  // 自定义主题：从当前激活主题读取颜色
+  customFromCurrentBtn.addEventListener("click", () => {
+    const currentTheme = getTheme();
+    const colors = readThemeColors(currentTheme);
+    applyConfigToEditor(colors);
+  });
+
   // 自定义主题保存
   customSaveBtn.addEventListener("click", () => {
-    const config = collectCustomConfig();
+    const config = getEditingConfig();
     setCustomTheme(config);
     renderThemeGrids();
   });

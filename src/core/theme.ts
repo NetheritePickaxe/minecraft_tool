@@ -258,6 +258,8 @@ const DEFAULT_CUSTOM: CustomThemeConfig = {
   baseContent: "#2b2b2b",
 };
 
+export { DEFAULT_CUSTOM };
+
 /** 获取自定义主题配置 */
 export function getCustomTheme(): CustomThemeConfig | null {
   try {
@@ -386,4 +388,52 @@ export function applyCustomThemeCss(): void {
       --erc: ${hexToOklch("#ffffff")};
     }
   `;
+}
+
+// ============== 读取主题颜色 ==============
+
+/** rgb()/rgba() 字符串转 #hex */
+function rgbToHex(rgb: string): string {
+  const m = rgb.match(/\d+(\.\d+)?/g);
+  if (!m || m.length < 3) return "#000000";
+  const r = Math.round(parseFloat(m[0]));
+  const g = Math.round(parseFloat(m[1]));
+  const b = Math.round(parseFloat(m[2]));
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+/**
+ * 读取任意主题的实际渲染颜色。
+ * 通过临时挂载带 data-theme 的探测元素，读取 bg-primary 等类的计算样式。
+ */
+export function readThemeColors(theme: Theme): CustomThemeConfig {
+  if (theme === "custom") {
+    const saved = getCustomTheme();
+    if (saved) return saved;
+  }
+
+  const probe = document.createElement("div");
+  probe.setAttribute("data-theme", theme === "custom" ? "light" : theme);
+  probe.style.cssText =
+    "position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden";
+  probe.innerHTML =
+    '<span class="bg-primary"></span>' +
+    '<span class="bg-secondary"></span>' +
+    '<span class="bg-accent"></span>' +
+    '<span class="bg-neutral"></span>' +
+    '<span class="bg-base-100"></span>' +
+    '<span class="text-base-content"></span>';
+  document.body.appendChild(probe);
+  const spans = probe.querySelectorAll("span");
+  const result: CustomThemeConfig = {
+    mode: isLightTheme(theme) ? "light" : "dark",
+    primary: rgbToHex(getComputedStyle(spans[0]).backgroundColor),
+    secondary: rgbToHex(getComputedStyle(spans[1]).backgroundColor),
+    accent: rgbToHex(getComputedStyle(spans[2]).backgroundColor),
+    neutral: rgbToHex(getComputedStyle(spans[3]).backgroundColor),
+    base100: rgbToHex(getComputedStyle(spans[4]).backgroundColor),
+    baseContent: rgbToHex(getComputedStyle(spans[5]).color),
+  };
+  document.body.removeChild(probe);
+  return result;
 }

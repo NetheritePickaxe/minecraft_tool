@@ -91,6 +91,8 @@
   "modules.settings.theme.custom.base": "背景色",
   "modules.settings.theme.custom.base-content": "文字色",
   "modules.settings.theme.custom.save": "保存并应用",
+  "modules.settings.theme.custom.from-current": "从当前主题",
+  "modules.settings.theme.custom.preview": "预览",
   "modules.settings.nav.title": "底边栏样式",
   "modules.settings.nav.normal": "普通",
   "modules.settings.nav.floating": "悬浮",
