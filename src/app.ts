@@ -35,6 +35,11 @@ import {
 import { t, onLocaleChange, initLocale } from "./lang";
 import type { ModuleRegistration, ModuleCategory } from "./core/types";
 import { resolveAndApply } from "./core/theme";
+import {
+  getNavStyle,
+  onNavStyleChange,
+  type NavStyle,
+} from "./core/layout";
 
 declareModule(() => import("./modules/server-motd"));
 declareModule(() => import("./modules/settings"));
@@ -96,7 +101,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </div>
       </div>
 
-      <main class="flex-1 pb-16 pt-[env(safe-area-inset-top,0px)]">
+      <main id="app-main" class="flex-1 pb-16 pt-[env(safe-area-inset-top,0px)]">
         <!-- 搜索框：全局共享，home/category 视图都显示 -->
         <div id="search-wrapper" class="px-4 pt-4 max-w-2xl mx-auto">
           <label class="flex items-center gap-3 bg-base-100 rounded-2xl px-5 py-3.5 shadow-sm">
@@ -141,21 +146,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </section>
       </main>
 
-      <!-- 底部导航：DaisyUI btm-nav -->
-      <div class="btm-nav btm-nav-sm border-t border-base-200 bg-base-100 z-30">
-        <button id="nav-home" class="active text-primary" data-nav="home">
-          <i data-lucide="home" class="w-5 h-5"></i>
-          <span class="btm-nav-label text-xs" data-i18n="app.home"></span>
-        </button>
-        ${
-          settingsModule
-            ? `<button id="nav-settings" class="text-base-content/60" data-nav="settings">
-          <i data-lucide="settings" class="w-5 h-5"></i>
-          <span class="btm-nav-label text-xs" data-i18n="app.settings"></span>
-        </button>`
-            : ""
-        }
-      </div>
+      <!-- 底部导航容器：内容由 renderNav() 根据 NavStyle 注入 -->
+      <div id="nav-container"></div>
     </div>
   `;
 
@@ -171,8 +163,11 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const toolsHeaderText = qs<HTMLButtonElement>(root, "#tools-header-text");
   const searchInput = qs<HTMLInputElement>(root, "#search-input");
   const searchWrapper = qs<HTMLElement>(root, "#search-wrapper");
-  const navHome = qs<HTMLElement>(root, "#nav-home");
-  const navSettings = root.querySelector<HTMLElement>("#nav-settings");
+  const navContainer = qs<HTMLElement>(root, "#nav-container");
+  const appMain = qs<HTMLElement>(root, "#app-main");
+  let navHome: HTMLElement | null = null;
+  let navSettings: HTMLElement | null = null;
+  let currentTab: NavTab = "home";
 
   let activeModuleId: string | null = null;
   let searchQuery = "";
@@ -233,13 +228,74 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setNav(tab: NavTab): void {
-    const activate = (btn: HTMLElement, active: boolean) => {
-      btn.classList.toggle("active", active);
-      btn.classList.toggle("text-primary", active);
-      btn.classList.toggle("text-base-content/60", !active);
+    currentTab = tab;
+    const style = getNavStyle();
+    const apply = (btn: HTMLElement, active: boolean) => {
+      if (style === "floating") {
+        btn.classList.toggle("btn-primary", active);
+        btn.classList.toggle("btn-ghost", !active);
+      } else {
+        btn.classList.toggle("active", active);
+        btn.classList.toggle("text-primary", active);
+        btn.classList.toggle("text-base-content/60", !active);
+      }
     };
-    activate(navHome, tab === "home");
-    if (navSettings) activate(navSettings, tab === "settings");
+    if (navHome) apply(navHome, tab === "home");
+    if (navSettings) apply(navSettings, tab === "settings");
+  }
+
+  /** 根据底边栏样式生成 HTML */
+  function buildNavHtml(style: NavStyle): string {
+    if (style === "floating") {
+      return `
+        <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-base-100/95 backdrop-blur-md rounded-full shadow-lg border border-base-200 px-2 py-1.5">
+          <button id="nav-home" class="btn btn-sm rounded-full gap-1 px-3" data-nav="home">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span class="text-xs" data-i18n="app.home"></span>
+          </button>
+          ${
+            settingsModule
+              ? `<button id="nav-settings" class="btn btn-sm rounded-full gap-1 px-3" data-nav="settings">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            <span class="text-xs" data-i18n="app.settings"></span>
+          </button>`
+              : ""
+          }
+        </div>
+      `;
+    }
+    return `
+      <div class="btm-nav btm-nav-sm border-t border-base-200 bg-base-100 z-30">
+        <button id="nav-home" class="text-base-content/60" data-nav="home">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-xs" data-i18n="app.home"></span>
+        </button>
+        ${
+          settingsModule
+            ? `<button id="nav-settings" class="text-base-content/60" data-nav="settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          <span class="btm-nav-label text-xs" data-i18n="app.settings"></span>
+        </button>`
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  /** 渲染底边栏：根据当前 NavStyle 注入 HTML、绑定事件、刷新图标与激活态 */
+  function renderNav(): void {
+    const style = getNavStyle();
+    // 悬浮样式需要更多底部留白
+    appMain.classList.toggle("pb-16", style === "normal");
+    appMain.classList.toggle("pb-24", style === "floating");
+    navContainer.innerHTML = buildNavHtml(style);
+    navHome = navContainer.querySelector<HTMLElement>("#nav-home");
+    navSettings = navContainer.querySelector<HTMLElement>("#nav-settings");
+    navHome?.addEventListener("click", showHome);
+    navSettings?.addEventListener("click", showSettings);
+    refreshStaticText();
+    refreshIcons();
+    setNav(currentTab);
   }
 
   function showHome(): void {
@@ -356,7 +412,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   renderToolGrid();
   refreshStaticText();
   refreshIcons();
-  setNav("home");
+  renderNav();
 
   toolGrid.addEventListener("click", (e) => {
     const card = (e.target as HTMLElement).closest<HTMLElement>("[data-module-id]");
@@ -377,8 +433,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   catBackBtn.addEventListener("click", showHome);
   toolsHeaderIcon.addEventListener("click", showCategoryView);
   toolsHeaderText.addEventListener("click", showCategoryView);
-  navHome.addEventListener("click", showHome);
-  navSettings?.addEventListener("click", showSettings);
 
   searchInput.addEventListener("input", () => {
     searchQuery = searchInput.value;
@@ -395,6 +449,10 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   onLocaleChange(() => {
     refreshStaticText();
     renderToolGrid();
+  });
+
+  onNavStyleChange(() => {
+    renderNav();
   });
 }
 

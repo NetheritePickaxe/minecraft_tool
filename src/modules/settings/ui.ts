@@ -35,6 +35,12 @@ import {
   type Platform,
   type DownloadEvent,
 } from "./commands";
+import {
+  getNavStyle,
+  setNavStyle,
+  onNavStyleChange,
+  type NavStyle,
+} from "../../core/layout";
 
 const REPO_URL = "https://github.com/NetheritePickaxe/minecraft_tool";
 const ISSUES_URL = `${REPO_URL}/issues`;
@@ -49,6 +55,11 @@ const THEME_MODES: Array<{ mode: ThemeMode; key: string }> = [
   { mode: "light", key: "modules.settings.theme.mode.light" },
   { mode: "dark", key: "modules.settings.theme.mode.dark" },
   { mode: "auto", key: "modules.settings.theme.mode.auto" },
+];
+
+const NAV_STYLES: Array<{ style: NavStyle; key: string }> = [
+  { style: "normal", key: "modules.settings.nav.normal" },
+  { style: "floating", key: "modules.settings.nav.floating" },
 ];
 
 const CUSTOM_COLORS: Array<{
@@ -141,6 +152,17 @@ export function createUi(container: HTMLElement): SettingsUi {
         </div>
       </div>
 
+      <!-- 底边栏样式：card + join -->
+      <div class="card bg-base-100 rounded-2xl shadow-sm">
+        <div class="card-body p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            <span class="font-medium" data-i18n="modules.settings.nav.title"></span>
+          </div>
+          <div class="join w-full" id="set-nav-style"></div>
+        </div>
+      </div>
+
       <!-- 链接：card + menu（Web 端不显示「在线 Web 版」） -->
       <div class="card bg-base-100 rounded-2xl shadow-sm">
         <div class="card-body p-0">
@@ -228,6 +250,7 @@ export function createUi(container: HTMLElement): SettingsUi {
   const customColorsBox = qs<HTMLElement>(container, "#custom-colors");
   const customModeSelect = qs<HTMLSelectElement>(container, "#custom-mode");
   const customSaveBtn = qs<HTMLButtonElement>(container, "#custom-save");
+  const navStyleBox = qs<HTMLElement>(container, "#set-nav-style");
   const versionEl = container.querySelector<HTMLElement>("#set-version");
   const platformEl = container.querySelector<HTMLElement>("#set-platform");
   const checkBtn = container.querySelector<HTMLElement>("#set-check-card");
@@ -244,6 +267,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     renderThemeMode();
     renderThemeGrids();
     renderCustomTheme();
+    renderNavStyle();
     if (platformEl) platformEl.textContent = platformLabel(platform);
     if (versionEl) versionEl.textContent = version;
     renderUpdateStatus();
@@ -280,6 +304,21 @@ export function createUi(container: HTMLElement): SettingsUi {
     themeModeBox.querySelectorAll<HTMLInputElement>("input[name='theme-mode']").forEach((input) => {
       const mode = input.value as ThemeMode;
       const opt = THEME_MODES.find((m) => m.mode === mode);
+      if (opt) input.setAttribute("aria-label", t(opt.key));
+    });
+  }
+
+  // ============== 底边栏样式 ==============
+
+  function renderNavStyle(): void {
+    const current = getNavStyle();
+    navStyleBox.innerHTML = NAV_STYLES.map(
+      (s) =>
+        `<input class="join-item btn btn-sm flex-1" type="radio" name="nav-style" value="${s.style}" aria-label="${t(s.key)}" ${s.style === current ? "checked" : ""} />`,
+    ).join("");
+    navStyleBox.querySelectorAll<HTMLInputElement>("input[name='nav-style']").forEach((input) => {
+      const style = input.value as NavStyle;
+      const opt = NAV_STYLES.find((s) => s.style === style);
       if (opt) input.setAttribute("aria-label", t(opt.key));
     });
   }
@@ -461,6 +500,15 @@ export function createUi(container: HTMLElement): SettingsUi {
     renderThemeGrids();
   });
 
+  // 底边栏样式选择
+  navStyleBox.addEventListener("change", (e) => {
+    const radio = (e.target as HTMLElement).closest<HTMLInputElement>(
+      "input[name='nav-style']",
+    );
+    if (!radio) return;
+    setNavStyle(radio.value as NavStyle);
+  });
+
   // 浅色主题选择
   lightThemeGrid.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
@@ -612,6 +660,9 @@ export function createUi(container: HTMLElement): SettingsUi {
     );
   });
   const offLocale = onLocaleChange(() => refresh());
+  const offNavStyle = onNavStyleChange(() => {
+    renderNavStyle();
+  });
 
   void loadVersion();
   refresh();
@@ -621,6 +672,7 @@ export function createUi(container: HTMLElement): SettingsUi {
     destroy() {
       offTheme();
       offLocale();
+      offNavStyle();
     },
   };
 }
