@@ -349,7 +349,7 @@ export function createUi(container: HTMLElement): SettingsUi {
 
   function renderThemeCard(name: Theme, checked: boolean): string {
     const light = isLightTheme(name);
-    const borderColor = light ? "border-black/15" : "border-white/30";
+    const borderColor = light ? "border-black" : "border-white";
     const displayName = name === "custom"
       ? t("modules.settings.theme.name.custom")
       : t(THEME_NAME_KEY[name as Exclude<Theme, "custom">]);
