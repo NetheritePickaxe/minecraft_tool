@@ -14,11 +14,17 @@ import {
   LIGHT_THEMES,
   DARK_THEMES,
   THEME_NAME_KEY,
-  getCustomTheme,
-  setCustomTheme,
+  getAllCustomThemes,
+  getCustomThemeById,
+  addCustomTheme,
+  updateCustomTheme,
+  deleteCustomTheme,
+  createDefaultCustomTheme,
+  customThemeIdToTheme,
+  isCustomTheme,
+  customThemeDisplayName,
   getTheme,
   readThemeColors,
-  DEFAULT_CUSTOM,
   type Theme,
   type ThemeMode,
   type CustomThemeConfig,
@@ -113,189 +119,136 @@ export function createUi(container: HTMLElement): SettingsUi {
   let darkSlotExpanded = false;
 
   container.innerHTML = `
-    <div class="max-w-2xl mx-auto space-y-3">
-      <!-- 语言：collapse + radio 列表 -->
-      <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
-        <input type="checkbox" checked />
-        <div class="collapse-title font-medium flex items-center gap-2">
-          <i data-lucide="languages" class="w-4 h-4"></i>
-          <span data-i18n="modules.settings.language.title"></span>
-        </div>
-        <div class="collapse-content">
-          <div class="flex flex-col gap-0 mt-2" id="set-locale-list"></div>
-        </div>
-      </div>
-
-      <!-- 主题：collapse -->
-      <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
-        <input type="checkbox" checked />
-        <div class="collapse-title font-medium flex items-center gap-2">
-          <i data-lucide="sun-moon" class="w-4 h-4"></i>
-          <span data-i18n="modules.settings.theme.title"></span>
-        </div>
-        <div class="collapse-content">
-          <!-- 主题模式选择 -->
-          <div class="mt-3">
-            <div class="text-sm opacity-70 mb-2" data-i18n="modules.settings.theme.mode"></div>
-            <div class="join w-full" id="set-theme-mode"></div>
+    <div class="max-w-2xl mx-auto">
+      <!-- 主设置视图 -->
+      <div id="settings-main" class="space-y-3">
+        <!-- 语言：collapse + radio 列表 -->
+        <div class="collapse collapse-arrow bg-base-100 rounded-2xl shadow-sm">
+          <input type="checkbox" checked />
+          <div class="collapse-title font-medium flex items-center gap-2">
+            <i data-lucide="languages" class="w-4 h-4"></i>
+            <span data-i18n="modules.settings.language.title"></span>
           </div>
+          <div class="collapse-content">
+            <div class="flex flex-col gap-0 mt-2" id="set-locale-list"></div>
+          </div>
+        </div>
 
-          <!-- 主题选择区：根据模式动态渲染（浅色网格 / 深色网格 / 双槽位） -->
-          <div class="mt-4" id="set-theme-picker"></div>
-
-          <!-- 自定义主题：单独分类 -->
-          <div class="mt-4 pt-4 border-t border-base-200">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-sm font-medium" data-i18n="modules.settings.theme.custom-title"></div>
-              <button id="custom-from-current" class="btn btn-xs btn-ghost gap-1">
-                <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-                <span class="text-xs" data-i18n="modules.settings.theme.custom.from-current"></span>
-              </button>
+        <!-- 主题：入口卡片，点击进入二级视图 -->
+        <button id="theme-entry" class="card bg-base-100 rounded-2xl shadow-sm w-full text-left cursor-pointer hover:shadow-md transition-shadow">
+          <div class="card-body p-4 flex-row items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <i data-lucide="sun-moon" class="w-5 h-5 text-primary"></i>
+            </span>
+            <div class="flex-1">
+              <div class="font-medium" data-i18n="modules.settings.theme.title"></div>
+              <div class="text-xs opacity-60 mt-0.5" id="theme-entry-summary"></div>
             </div>
-            <div id="set-custom-theme" class="space-y-3">
-              <!-- 卡片预览：与普通主题卡片样式一致，主题名可编辑 -->
-              <div class="flex justify-center">
-                <div class="p-1 w-28">
-                  <div class="rounded-3xl p-2">
-                    <div id="custom-preview-swatches" class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl p-2"></div>
-                    <input id="custom-name" type="text" maxlength="12" class="input input-xs input-ghost w-full text-center font-medium px-1" />
-                  </div>
-                </div>
-              </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 opacity-40"></i>
+          </div>
+        </button>
 
-              <!-- 主题名输入 -->
-              <div class="flex items-center gap-2">
-                <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.name"></span>
-                <input id="custom-name-input" type="text" maxlength="12" class="input input-sm input-bordered w-32 text-center" />
-              </div>
-
-              <!-- 模式选择 -->
-              <div class="flex items-center gap-2">
-                <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.mode"></span>
-                <select id="custom-mode" class="select select-sm select-bordered">
-                  <option value="light" data-i18n="modules.settings.theme.mode.light"></option>
-                  <option value="dark" data-i18n="modules.settings.theme.mode.dark"></option>
-                </select>
-              </div>
-
-              <!-- 圆角选择 -->
-              <div class="flex items-center gap-2">
-                <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.radius"></span>
-                <div class="join" id="custom-radius"></div>
-              </div>
-
-              <!-- 颜色编辑 -->
-              <div id="custom-colors" class="space-y-2"></div>
-
-              <button id="custom-save" class="btn btn-sm btn-primary w-full" data-i18n="modules.settings.theme.custom.save"></button>
+        <!-- 底边栏样式：card + join -->
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
+              <span class="font-medium" data-i18n="modules.settings.nav.title"></span>
             </div>
+            <div class="join w-full" id="set-nav-style"></div>
           </div>
         </div>
-      </div>
 
-      <!-- 底边栏样式：card + join -->
-      <div class="card bg-base-100 rounded-2xl shadow-sm">
-        <div class="card-body p-4">
-          <div class="flex items-center gap-2 mb-3">
-            <i data-lucide="layout-grid" class="w-4 h-4"></i>
-            <span class="font-medium" data-i18n="modules.settings.nav.title"></span>
+        <!-- 链接：card + menu（Web 端不显示「在线 Web 版」） -->
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
+          <div class="card-body p-0">
+            <div class="card-title text-base gap-2 px-4 pt-4">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+              <span data-i18n="modules.settings.links.title"></span>
+            </div>
+            <ul class="menu menu-sm w-full p-2 mt-2">
+              <li>
+                <a data-link="${REPO_URL}" class="gap-2">
+                  <i data-lucide="star" class="w-4 h-4"></i>
+                  <span data-i18n="modules.settings.links.repo"></span>
+                </a>
+              </li>
+              <li>
+                <a data-link="${ISSUES_URL}" class="gap-2">
+                  <i data-lucide="message-circle" class="w-4 h-4"></i>
+                  <span data-i18n="modules.settings.links.issues"></span>
+                </a>
+              </li>
+              ${
+                isApp
+                  ? `<li>
+                <a data-link="${WEB_URL}" class="gap-2">
+                  <i data-lucide="globe" class="w-4 h-4"></i>
+                  <span data-i18n="modules.settings.links.web"></span>
+                </a>
+              </li>`
+                  : ""
+              }
+            </ul>
           </div>
-          <div class="join w-full" id="set-nav-style"></div>
         </div>
-      </div>
 
-      <!-- 链接：card + menu（Web 端不显示「在线 Web 版」） -->
-      <div class="card bg-base-100 rounded-2xl shadow-sm">
-        <div class="card-body p-0">
-          <div class="card-title text-base gap-2 px-4 pt-4">
-            <i data-lucide="external-link" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.links.title"></span>
-          </div>
-          <ul class="menu menu-sm w-full p-2 mt-2">
-            <li>
-              <a data-link="${REPO_URL}" class="gap-2">
-                <i data-lucide="star" class="w-4 h-4"></i>
-                <span data-i18n="modules.settings.links.repo"></span>
-              </a>
-            </li>
-            <li>
-              <a data-link="${ISSUES_URL}" class="gap-2">
-                <i data-lucide="message-circle" class="w-4 h-4"></i>
-                <span data-i18n="modules.settings.links.issues"></span>
-              </a>
-            </li>
+        <!-- 关于：所有平台都显示（版本/平台/作者/更新） -->
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
+          <div class="card-body gap-3">
+            <h3 class="card-title text-base gap-2">
+              <i data-lucide="info" class="w-4 h-4"></i>
+              <span data-i18n="modules.settings.about.title"></span>
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="table table-sm">
+                <tbody>
+                  <tr>
+                    <td class="opacity-70" data-i18n="modules.settings.about.version"></td>
+                    <td class="text-right font-mono" id="set-version">0.0.0</td>
+                  </tr>
+                  <tr>
+                    <td class="opacity-70" data-i18n="modules.settings.about.platform"></td>
+                    <td class="text-right font-mono" id="set-platform">Web</td>
+                  </tr>
+                  <tr>
+                    <td class="opacity-70" data-i18n="modules.settings.about.author"></td>
+                    <td class="text-right font-mono">NetheritePickaxe</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             ${
               isApp
-                ? `<li>
-              <a data-link="${WEB_URL}" class="gap-2">
-                <i data-lucide="globe" class="w-4 h-4"></i>
-                <span data-i18n="modules.settings.links.web"></span>
-              </a>
-            </li>`
+                ? `<div id="set-update-area" class="space-y-3 mt-2 pt-3 border-t border-base-200">
+                <button id="set-check-card" class="btn btn-primary w-full gap-2">
+                  <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                  <span data-i18n="modules.settings.update.check"></span>
+                </button>
+                <div id="set-update-status" class="text-sm"></div>
+                <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
+                <button id="set-install-card" class="btn btn-success w-full gap-2 hidden">
+                  <i data-lucide="download" class="w-5 h-5"></i>
+                  <span data-i18n="modules.settings.update.install"></span>
+                </button>
+              </div>`
                 : ""
             }
-          </ul>
+          </div>
         </div>
       </div>
 
-      <!-- 关于：所有平台都显示（版本/平台/作者/更新） -->
-      <div class="card bg-base-100 rounded-2xl shadow-sm">
-        <div class="card-body gap-3">
-          <h3 class="card-title text-base gap-2">
-            <i data-lucide="info" class="w-4 h-4"></i>
-            <span data-i18n="modules.settings.about.title"></span>
-          </h3>
-          <div class="overflow-x-auto">
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td class="opacity-70" data-i18n="modules.settings.about.version"></td>
-                  <td class="text-right font-mono" id="set-version">0.0.0</td>
-                </tr>
-                <tr>
-                  <td class="opacity-70" data-i18n="modules.settings.about.platform"></td>
-                  <td class="text-right font-mono" id="set-platform">Web</td>
-                </tr>
-                <tr>
-                  <td class="opacity-70" data-i18n="modules.settings.about.author"></td>
-                  <td class="text-right font-mono">NetheritePickaxe</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          ${
-            isApp
-              ? `<div id="set-update-area" class="space-y-3 mt-2 pt-3 border-t border-base-200">
-              <button id="set-check-card" class="btn btn-primary w-full gap-2">
-                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                <span data-i18n="modules.settings.update.check"></span>
-              </button>
-              <div id="set-update-status" class="text-sm"></div>
-              <progress id="set-progress" class="progress progress-primary w-full hidden" value="0" max="100"></progress>
-              <button id="set-install-card" class="btn btn-success w-full gap-2 hidden">
-                <i data-lucide="download" class="w-5 h-5"></i>
-                <span data-i18n="modules.settings.update.install"></span>
-              </button>
-            </div>`
-              : ""
-          }
-        </div>
-      </div>
+      <!-- 主题二级视图：默认隐藏，进入时填充 -->
+      <div id="settings-theme-view" class="hidden"></div>
     </div>
   `;
 
   const localeList = qs<HTMLElement>(container, "#set-locale-list");
-  const themeModeBox = qs<HTMLElement>(container, "#set-theme-mode");
-  const themePickerBox = qs<HTMLElement>(container, "#set-theme-picker");
-  const customColorsBox = qs<HTMLElement>(container, "#custom-colors");
-  const customModeSelect = qs<HTMLSelectElement>(container, "#custom-mode");
-  const customSaveBtn = qs<HTMLButtonElement>(container, "#custom-save");
+  const themeEntry = qs<HTMLButtonElement>(container, "#theme-entry");
+  const themeEntrySummary = qs<HTMLElement>(container, "#theme-entry-summary");
+  const settingsMain = qs<HTMLElement>(container, "#settings-main");
+  const themeView = qs<HTMLElement>(container, "#settings-theme-view");
   const navStyleBox = qs<HTMLElement>(container, "#set-nav-style");
-  const customFromCurrentBtn = qs<HTMLButtonElement>(container, "#custom-from-current");
-  const customPreviewSwatches = qs<HTMLElement>(container, "#custom-preview-swatches");
-  const customNameInput = qs<HTMLInputElement>(container, "#custom-name-input");
-  const customNamePreview = qs<HTMLInputElement>(container, "#custom-name");
-  const customRadiusBox = qs<HTMLElement>(container, "#custom-radius");
   const versionEl = container.querySelector<HTMLElement>("#set-version");
   const platformEl = container.querySelector<HTMLElement>("#set-platform");
   const checkBtn = container.querySelector<HTMLElement>("#set-check-card");
@@ -304,19 +257,34 @@ export function createUi(container: HTMLElement): SettingsUi {
     container.querySelector<HTMLProgressElement>("#set-progress");
   const installBtn = container.querySelector<HTMLElement>("#set-install-card");
 
+  let themeViewActive = false;
+
   function refresh(): void {
     container.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       el.textContent = t(el.dataset.i18n!);
     });
     renderLocaleList();
-    renderThemeMode();
-    renderThemePicker();
-    renderCustomTheme();
-    renderCustomRadius();
     renderNavStyle();
+    updateThemeEntrySummary();
+    if (themeViewActive) renderThemeView();
     if (platformEl) platformEl.textContent = platformLabel(platform);
     if (versionEl) versionEl.textContent = version;
     renderUpdateStatus();
+  }
+
+  /** 主设置页主题入口的摘要文字 */
+  function updateThemeEntrySummary(): void {
+    const mode = getThemeMode();
+    const modeLabel = t(`modules.settings.theme.mode.${mode}`);
+    const lightTheme = getDefaultLightTheme();
+    const darkTheme = getDefaultDarkTheme();
+    const lightName = isCustomTheme(lightTheme)
+      ? customThemeDisplayName(lightTheme)
+      : t(THEME_NAME_KEY[lightTheme as keyof typeof THEME_NAME_KEY]);
+    const darkName = isCustomTheme(darkTheme)
+      ? customThemeDisplayName(darkTheme)
+      : t(THEME_NAME_KEY[darkTheme as keyof typeof THEME_NAME_KEY]);
+    themeEntrySummary.textContent = `${modeLabel} · ${lightName} / ${darkName}`;
   }
 
   function platformLabel(p: Platform): string {
@@ -338,20 +306,12 @@ export function createUi(container: HTMLElement): SettingsUi {
     ).join("");
   }
 
-  // ============== 主题模式 ==============
+  // ============== 主题二级视图 ==============
 
-  function renderThemeMode(): void {
-    const current = getThemeMode();
-    themeModeBox.innerHTML = THEME_MODES.map(
-      (m) =>
-        `<input class="join-item btn btn-sm flex-1" type="radio" name="theme-mode" value="${m.mode}" aria-label="${t(m.key)}" ${m.mode === current ? "checked" : ""} />`,
-    ).join("");
-    // 更新按钮文字
-    themeModeBox.querySelectorAll<HTMLInputElement>("input[name='theme-mode']").forEach((input) => {
-      const mode = input.value as ThemeMode;
-      const opt = THEME_MODES.find((m) => m.mode === mode);
-      if (opt) input.setAttribute("aria-label", t(opt.key));
-    });
+  /** 主题显示名（内置 + 自定义） */
+  function themeDisplayName(theme: Theme): string {
+    if (isCustomTheme(theme)) return customThemeDisplayName(theme);
+    return t(THEME_NAME_KEY[theme as keyof typeof THEME_NAME_KEY]);
   }
 
   // ============== 底边栏样式 ==============
@@ -369,17 +329,11 @@ export function createUi(container: HTMLElement): SettingsUi {
     });
   }
 
-  // ============== 主题选择区 ==============
-
-  function themeDisplayName(name: Theme): string {
-    if (name === "custom") return t("modules.settings.theme.name.custom");
-    return t(THEME_NAME_KEY[name as Exclude<Theme, "custom">]);
-  }
-
   /** 槽位缩略图：4 个小圆点展示主题色 */
   function renderSlotSwatch(theme: Theme): string {
-    if (theme === "custom") {
-      const config = getCustomTheme();
+    if (isCustomTheme(theme)) {
+      const id = theme.replace(/^custom-/, "");
+      const config = getCustomThemeById(id);
       if (config) {
         return `
           <span class="flex gap-0.5">
@@ -399,32 +353,107 @@ export function createUi(container: HTMLElement): SettingsUi {
       </span>`;
   }
 
-  /** 根据当前模式渲染主题选择区 */
-  function renderThemePicker(): void {
+  /** 主题卡片（内置或自定义） */
+  function renderThemeCard(
+    name: Theme,
+    checked: boolean,
+    slot: "light" | "dark",
+  ): string {
+    const displayName = themeDisplayName(name);
+    const swatchInner = isCustomTheme(name)
+      ? (() => {
+          const id = name.replace(/^custom-/, "");
+          const cfg = getCustomThemeById(id);
+          const colors = cfg
+            ? [cfg.primary, cfg.secondary, cfg.accent, cfg.neutral]
+            : ["#888", "#888", "#888", "#888"];
+          return colors
+            .map(
+              (c) =>
+                `<span class="aspect-square rounded-full border border-base-content/15" style="background:${c}"></span>`,
+            )
+            .join("");
+        })()
+      : `<span class="aspect-square rounded-full bg-primary border border-base-content/15"></span>
+         <span class="aspect-square rounded-full bg-secondary border border-base-content/15"></span>
+         <span class="aspect-square rounded-full bg-accent border border-base-content/15"></span>
+         <span class="aspect-square rounded-full bg-neutral border border-base-content/15"></span>`;
+    const bgStyle = isCustomTheme(name)
+      ? (() => {
+          const id = name.replace(/^custom-/, "");
+          const cfg = getCustomThemeById(id);
+          return cfg ? `style="background:${cfg.base100}"` : "";
+        })()
+      : "";
+    return `
+      <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}" data-theme-slot="${slot}">
+        <div class="rounded-3xl p-2 transition-all ${checked ? "ring-2 ring-primary" : ""}">
+          <div class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl p-2" ${isCustomTheme(name) ? "" : `data-theme="${name}"`} ${bgStyle}>
+            ${swatchInner}
+          </div>
+          <div class="font-medium text-xs text-center truncate">${escapeHtml(displayName)}</div>
+        </div>
+      </button>`;
+  }
+
+  /** 进入主题二级视图 */
+  function showThemeView(): void {
+    themeViewActive = true;
+    settingsMain.classList.add("hidden");
+    themeView.classList.remove("hidden");
+    renderThemeView();
+    window.scrollTo({ top: 0 });
+  }
+
+  /** 返回主设置页 */
+  function hideThemeView(): void {
+    themeViewActive = false;
+    themeView.classList.add("hidden");
+    settingsMain.classList.remove("hidden");
+    updateThemeEntrySummary();
+    window.scrollTo({ top: 0 });
+  }
+
+  /** 渲染主题二级视图 */
+  function renderThemeView(): void {
     const mode = getThemeMode();
     const currentLight = getDefaultLightTheme();
     const currentDark = getDefaultDarkTheme();
+    const customThemes = getAllCustomThemes();
+    const customLightThemes = customThemes.filter((c) => c.mode === "light");
+    const customDarkThemes = customThemes.filter((c) => c.mode === "dark");
 
-    let html = "";
+    // 模式选择器
+    const modeSelector = THEME_MODES.map(
+      (m) =>
+        `<input class="join-item btn btn-sm flex-1" type="radio" name="theme-mode" value="${m.mode}" aria-label="${t(m.key)}" ${m.mode === mode ? "checked" : ""} />`,
+    ).join("");
+
+    // 根据模式渲染主题选择区
+    let pickerHtml = "";
+    const buildGrid = (slot: "light" | "dark"): string => {
+      const builtin = slot === "light" ? LIGHT_THEMES : DARK_THEMES;
+      const customs = slot === "light" ? customLightThemes : customDarkThemes;
+      const current = slot === "light" ? currentLight : currentDark;
+      const cards = [
+        ...builtin.map((name) => renderThemeCard(name, name === current, slot)),
+        ...customs.map((c) =>
+          renderThemeCard(customThemeIdToTheme(c.id), customThemeIdToTheme(c.id) === current, slot),
+        ),
+      ].join("");
+      return `<div class="grid grid-cols-3 gap-2">${cards}</div>`;
+    };
+
     if (mode === "light") {
-      html = `
+      pickerHtml = `
         <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.light-title"></div>
-        <div class="grid grid-cols-3 gap-2">
-          ${LIGHT_THEMES.map((name) =>
-            renderThemeCard(name, name === currentLight, "light"),
-          ).join("")}
-        </div>`;
+        ${buildGrid("light")}`;
     } else if (mode === "dark") {
-      html = `
+      pickerHtml = `
         <div class="text-sm font-medium mb-2" data-i18n="modules.settings.theme.dark-title"></div>
-        <div class="grid grid-cols-3 gap-2">
-          ${DARK_THEMES.map((name) =>
-            renderThemeCard(name, name === currentDark, "dark"),
-          ).join("")}
-        </div>`;
+        ${buildGrid("dark")}`;
     } else {
-      // auto：两个槽位，点击展开对应网格
-      html = `
+      pickerHtml = `
         <div class="collapse collapse-arrow bg-base-200 rounded-2xl mb-2">
           <input type="checkbox" ${lightSlotExpanded ? "checked" : ""} data-slot-toggle="light" />
           <div class="collapse-title font-medium flex items-center gap-2 min-h-0 py-3">
@@ -435,11 +464,7 @@ export function createUi(container: HTMLElement): SettingsUi {
             </span>
           </div>
           <div class="collapse-content">
-            <div class="grid grid-cols-3 gap-2 mt-2">
-              ${LIGHT_THEMES.map((name) =>
-                renderThemeCard(name, name === currentLight, "light"),
-              ).join("")}
-            </div>
+            <div class="mt-2">${buildGrid("light")}</div>
           </div>
         </div>
         <div class="collapse collapse-arrow bg-base-200 rounded-2xl">
@@ -452,146 +477,301 @@ export function createUi(container: HTMLElement): SettingsUi {
             </span>
           </div>
           <div class="collapse-content">
-            <div class="grid grid-cols-3 gap-2 mt-2">
-              ${DARK_THEMES.map((name) =>
-                renderThemeCard(name, name === currentDark, "dark"),
+            <div class="mt-2">${buildGrid("dark")}</div>
+          </div>
+        </div>`;
+    }
+
+    // 自定义主题管理列表
+    const customListHtml = customThemes.length === 0
+      ? `<div class="text-sm opacity-50 text-center py-4" data-i18n="modules.settings.theme.custom.empty"></div>`
+      : customThemes
+          .map((c) => {
+            const theme = customThemeIdToTheme(c.id);
+            const inUse = currentLight === theme || currentDark === theme;
+            return `
+              <div class="flex items-center gap-3 p-3 bg-base-100 rounded-2xl shadow-sm" data-custom-id="${c.id}">
+                <div class="grid grid-cols-2 gap-0.5 w-10 h-10 p-1 rounded-xl shrink-0" style="background:${c.base100}">
+                  <span class="rounded-full border border-base-content/15" style="background:${c.primary}"></span>
+                  <span class="rounded-full border border-base-content/15" style="background:${c.secondary}"></span>
+                  <span class="rounded-full border border-base-content/15" style="background:${c.accent}"></span>
+                  <span class="rounded-full border border-base-content/15" style="background:${c.neutral}"></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium text-sm truncate">${escapeHtml(c.name)}</div>
+                  <div class="text-xs opacity-60">${t(`modules.settings.theme.mode.${c.mode}`)}${inUse ? ` · ${t("modules.settings.theme.custom.in-use")}` : ""}</div>
+                </div>
+                <button class="btn btn-xs btn-ghost" data-custom-edit="${c.id}">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+                <button class="btn btn-xs btn-ghost text-error" data-custom-delete="${c.id}" ${inUse ? "disabled" : ""}>
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>`;
+          })
+          .join("");
+
+    themeView.innerHTML = `
+      <div class="space-y-3">
+        <!-- 返回栏 -->
+        <div class="flex items-center gap-2 -mb-1">
+          <button id="theme-back" class="btn btn-sm btn-ghost gap-1">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span data-i18n="app.back"></span>
+          </button>
+          <h2 class="font-bold text-base" data-i18n="modules.settings.theme.title"></h2>
+        </div>
+
+        <!-- 模式选择 -->
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <i data-lucide="sun-moon" class="w-4 h-4"></i>
+              <span class="font-medium" data-i18n="modules.settings.theme.mode"></span>
+            </div>
+            <div class="join w-full">${modeSelector}</div>
+          </div>
+        </div>
+
+        <!-- 主题选择 -->
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
+          <div class="card-body p-4">
+            ${pickerHtml}
+          </div>
+        </div>
+
+        <!-- 自定义主题管理 -->
+        <div class="card bg-base-100 rounded-2xl shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="palette" class="w-4 h-4"></i>
+                <span class="font-medium" data-i18n="modules.settings.theme.custom-title"></span>
+              </div>
+              <button id="custom-new" class="btn btn-xs btn-primary gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span data-i18n="modules.settings.theme.custom.new"></span>
+              </button>
+            </div>
+            <div class="space-y-2">${customListHtml}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 填充 i18n 文本
+    themeView.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+      el.textContent = t(el.dataset.i18n!);
+    });
+
+    // 触发图标刷新
+    container.dispatchEvent(
+      new CustomEvent("settings:icons-stale", { bubbles: true }),
+    );
+  }
+
+  /** 打开自定义主题编辑弹窗（新建或编辑） */
+  function openCustomEditor(existingId?: string): void {
+    const isNew = !existingId;
+    const config: CustomThemeConfig = isNew
+      ? createDefaultCustomTheme(getThemeMode() === "dark" ? "dark" : "light")
+      : (getCustomThemeById(existingId!) ?? createDefaultCustomTheme());
+
+    const dialog = document.createElement("dialog");
+    dialog.className = "modal modal-open";
+    // 弹窗跟随当前活跃主题
+    const currentThemeAttr = document.documentElement.getAttribute("data-theme") ?? "light";
+    dialog.innerHTML = `
+      <div class="modal-box max-w-md" id="custom-editor-box" data-theme="${currentThemeAttr}">
+        <h3 class="font-bold text-base mb-3">${isNew ? t("modules.settings.theme.custom.new-title") : t("modules.settings.theme.custom.edit-title")}</h3>
+        <div class="space-y-3">
+          <!-- 预览卡片 -->
+          <div class="flex justify-center">
+            <div class="p-1 w-28">
+              <div class="rounded-3xl p-2">
+                <div id="ce-preview" class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl p-2"></div>
+                <input id="ce-name" type="text" maxlength="12" class="input input-xs input-ghost w-full text-center font-medium px-1" />
+              </div>
+            </div>
+          </div>
+          <!-- 主题名 -->
+          <div class="flex items-center gap-2">
+            <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.name"></span>
+            <input id="ce-name-input" type="text" maxlength="12" class="input input-sm input-bordered w-32 text-center" value="${escapeHtml(config.name)}" />
+          </div>
+          <!-- 模式 -->
+          <div class="flex items-center gap-2">
+            <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.mode"></span>
+            <select id="ce-mode" class="select select-sm select-bordered">
+              <option value="light" ${config.mode === "light" ? "selected" : ""}>${t("modules.settings.theme.mode.light")}</option>
+              <option value="dark" ${config.mode === "dark" ? "selected" : ""}>${t("modules.settings.theme.mode.dark")}</option>
+            </select>
+          </div>
+          <!-- 圆角 -->
+          <div class="flex items-center gap-2">
+            <span class="text-sm flex-1" data-i18n="modules.settings.theme.custom.radius"></span>
+            <div class="join" id="ce-radius">
+              ${RADIUS_OPTIONS.map((r) =>
+                `<input class="join-item btn btn-xs" type="radio" name="ce-radius" value="${r.value}" aria-label="${t(r.key)}" ${r.value === config.radius ? "checked" : ""} />`,
               ).join("")}
             </div>
           </div>
-        </div>`;
-    }
-
-    themePickerBox.innerHTML = html;
-    // 渲染后填充 i18n 文本
-    themePickerBox.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
-      el.textContent = t(el.dataset.i18n!);
-    });
-  }
-
-  function renderThemeCard(
-    name: Theme,
-    checked: boolean,
-    slot: "light" | "dark",
-  ): string {
-    const displayName = themeDisplayName(name);
-    return `
-      <button class="p-1 transition-all cursor-pointer text-left" data-theme-set="${name}" data-theme-slot="${slot}">
-        <div class="rounded-3xl p-2 transition-all ${checked ? "ring-2 ring-primary" : ""}">
-          <div class="grid grid-cols-2 gap-1 mb-1.5 rounded-3xl bg-base-200 p-2" data-theme="${name}">
-            <span class="aspect-square rounded-full bg-primary border border-base-content/15"></span>
-            <span class="aspect-square rounded-full bg-secondary border border-base-content/15"></span>
-            <span class="aspect-square rounded-full bg-accent border border-base-content/15"></span>
-            <span class="aspect-square rounded-full bg-neutral border border-base-content/15"></span>
-          </div>
-          <div class="font-medium text-xs text-center truncate">${displayName}</div>
+          <!-- 从当前主题载入 -->
+          <button id="ce-from-current" class="btn btn-xs btn-ghost gap-1 w-full">
+            <i data-lucide="arrow-down-to-line" class="w-3.5 h-3.5"></i>
+            <span class="text-xs" data-i18n="modules.settings.theme.custom.from-current"></span>
+          </button>
+          <!-- 颜色编辑 -->
+          <div id="ce-colors" class="space-y-2"></div>
         </div>
-      </button>`;
-  }
+        <div class="modal-action">
+          <button id="ce-cancel" class="btn btn-sm btn-ghost" data-i18n="common.cancel"></button>
+          <button id="ce-save" class="btn btn-sm btn-primary" data-i18n="common.confirm"></button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button id="ce-backdrop"></button></form>
+    `;
+    document.body.appendChild(dialog);
 
-  // ============== 自定义主题编辑器 ==============
+    const editorBox = dialog.querySelector<HTMLElement>("#custom-editor-box")!;
+    const preview = editorBox.querySelector<HTMLElement>("#ce-preview")!;
+    const nameInput = editorBox.querySelector<HTMLInputElement>("#ce-name-input")!;
+    const namePreview = editorBox.querySelector<HTMLInputElement>("#ce-name")!;
+    const modeSelect = editorBox.querySelector<HTMLSelectElement>("#ce-mode")!;
+    const radiusBox = editorBox.querySelector<HTMLElement>("#ce-radius")!;
+    const colorsBox = editorBox.querySelector<HTMLElement>("#ce-colors")!;
+    const fromCurrentBtn = editorBox.querySelector<HTMLButtonElement>("#ce-from-current")!;
+    const cancelBtn = editorBox.querySelector<HTMLButtonElement>("#ce-cancel")!;
+    const saveBtn = editorBox.querySelector<HTMLButtonElement>("#ce-save")!;
+    const backdrop = dialog.querySelector<HTMLButtonElement>("#ce-backdrop")!;
 
-  /** 获取编辑器当前编辑中的配置（未保存） */
-  function getEditingConfig(): CustomThemeConfig {
-    const config: CustomThemeConfig = {
-      mode: customModeSelect.value as "light" | "dark",
-      name: customNameInput.value.trim() || "Custom",
-      primary: "#000000",
-      secondary: "#000000",
-      accent: "#000000",
-      neutral: "#000000",
-      base100: "#000000",
-      baseContent: "#000000",
-      radius: getEditingRadius(),
-    };
-    for (const c of CUSTOM_COLORS) {
-      const input = customColorsBox.querySelector<HTMLInputElement>(
-        `input[data-color-input="${c.key}"]`,
-      );
-      if (input && /^#[0-9a-fA-F]{6}$/.test(input.value.trim())) {
-        config[c.key] = input.value.trim();
+    // 渲染颜色编辑器
+    function renderColors(cfg: CustomThemeConfig): void {
+      colorsBox.innerHTML = CUSTOM_COLORS.map((c) => {
+        const value = cfg[c.key as ColorKey];
+        return `
+          <div class="flex items-center gap-3 p-2 bg-base-200/50 rounded-xl">
+            <label class="relative w-9 h-9 rounded-lg border border-base-content/10 shrink-0 cursor-pointer overflow-hidden" style="background:${value}">
+              <input type="color" value="${value}" data-color-picker="${c.key}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            </label>
+            <span class="text-sm flex-1">${t(c.label)}</span>
+            <input type="text" value="${value}" data-color-input="${c.key}" class="input input-xs input-bordered w-24 font-mono text-center" maxlength="7" />
+          </div>`;
+      }).join("");
+    }
+
+    // 获取编辑中的配置
+    function getEditing(): CustomThemeConfig {
+      const cfg: CustomThemeConfig = {
+        id: config.id,
+        mode: modeSelect.value as "light" | "dark",
+        name: nameInput.value.trim() || "Custom",
+        primary: "#000000",
+        secondary: "#000000",
+        accent: "#000000",
+        neutral: "#000000",
+        base100: "#000000",
+        baseContent: "#000000",
+        radius: (() => {
+          const checked = radiusBox.querySelector<HTMLInputElement>("input[name='ce-radius']:checked");
+          return (checked?.value as CustomRadius) ?? "lg";
+        })(),
+      };
+      for (const c of CUSTOM_COLORS) {
+        const input = colorsBox.querySelector<HTMLInputElement>(`input[data-color-input="${c.key}"]`);
+        if (input && /^#[0-9a-fA-F]{6}$/.test(input.value.trim())) {
+          cfg[c.key as ColorKey] = input.value.trim();
+        }
       }
+      return cfg;
     }
-    return config;
-  }
 
-  /** 从 join 单选获取当前选中的圆角 */
-  function getEditingRadius(): CustomRadius {
-    const checked = customRadiusBox.querySelector<HTMLInputElement>(
-      "input[name='custom-radius']:checked",
-    );
-    if (checked && ["none", "sm", "md", "lg", "full"].includes(checked.value)) {
-      return checked.value as CustomRadius;
+    // 更新预览
+    function updateEdPreview(): void {
+      const cfg = getEditing();
+      preview.style.background = cfg.base100;
+      preview.style.color = cfg.baseContent;
+      const swatchKeys: ColorKey[] = ["primary", "secondary", "accent", "neutral"];
+      preview.innerHTML = swatchKeys
+        .map((key) => `<span class="aspect-square rounded-full border border-base-content/15" style="background:${cfg[key]}"></span>`)
+        .join("");
+      namePreview.value = cfg.name;
+      namePreview.style.color = cfg.baseContent;
     }
-    return "lg";
-  }
 
-  function renderCustomTheme(): void {
-    const config = getCustomTheme() ?? DEFAULT_CUSTOM;
-    customModeSelect.value = config.mode;
-    customNameInput.value = config.name;
-    customColorsBox.innerHTML = CUSTOM_COLORS.map((c) => {
-      const value = config[c.key];
-      return `
-        <div class="flex items-center gap-3 p-2 bg-base-200/50 rounded-xl">
-          <label class="relative w-9 h-9 rounded-lg border border-base-content/10 shrink-0 cursor-pointer overflow-hidden" style="background:${value}">
-            <input type="color" value="${value}" data-color-picker="${c.key}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-          </label>
-          <span class="text-sm flex-1">${t(c.label)}</span>
-          <input type="text" value="${value}" data-color-input="${c.key}" class="input input-xs input-bordered w-24 font-mono text-center" maxlength="7" />
-        </div>`;
-    }).join("");
-    updatePreview();
-  }
-
-  /** 渲染圆角选择器 */
-  function renderCustomRadius(): void {
-    const config = getCustomTheme() ?? DEFAULT_CUSTOM;
-    customRadiusBox.innerHTML = RADIUS_OPTIONS.map(
-      (r) =>
-        `<input class="join-item btn btn-xs" type="radio" name="custom-radius" value="${r.value}" aria-label="${t(r.key)}" ${r.value === config.radius ? "checked" : ""} />`,
-    ).join("");
-  }
-
-  /** 把指定配置写入编辑器 UI（不保存） */
-  function applyConfigToEditor(config: CustomThemeConfig): void {
-    customModeSelect.value = config.mode;
-    customNameInput.value = config.name;
-    for (const c of CUSTOM_COLORS) {
-      const value = config[c.key];
-      const picker = customColorsBox.querySelector<HTMLInputElement>(
-        `input[data-color-picker="${c.key}"]`,
-      );
-      const input = customColorsBox.querySelector<HTMLInputElement>(
-        `input[data-color-input="${c.key}"]`,
-      );
-      if (picker) picker.value = value;
-      if (input) input.value = value;
-      const label = picker?.parentElement;
-      if (label) label.style.background = value;
+    // 把配置写入编辑器 UI
+    function applyConfig(cfg: CustomThemeConfig): void {
+      modeSelect.value = cfg.mode;
+      nameInput.value = cfg.name;
+      renderColors(cfg);
+      radiusBox.querySelectorAll<HTMLInputElement>("input[name='ce-radius']").forEach((input) => {
+        input.checked = input.value === cfg.radius;
+      });
+      updateEdPreview();
     }
-    // 更新圆角选择
-    customRadiusBox.querySelectorAll<HTMLInputElement>("input[name='custom-radius']").forEach((input) => {
-      input.checked = input.value === config.radius;
+
+    applyConfig(config);
+
+    // 事件：颜色 picker / 文本输入
+    colorsBox.addEventListener("input", (e) => {
+      const picker = (e.target as HTMLElement).closest<HTMLInputElement>("input[data-color-picker]");
+      const input = (e.target as HTMLElement).closest<HTMLInputElement>("input[data-color-input]");
+      if (picker) {
+        const key = picker.dataset.colorPicker!;
+        const textInput = colorsBox.querySelector<HTMLInputElement>(`input[data-color-input="${key}"]`);
+        const label = picker.parentElement;
+        if (textInput) textInput.value = picker.value;
+        if (label) label.style.background = picker.value;
+        updateEdPreview();
+      } else if (input) {
+        const val = input.value.trim();
+        if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+          const key = input.dataset.colorInput!;
+          const pickerEl = colorsBox.querySelector<HTMLInputElement>(`input[data-color-picker="${key}"]`);
+          const label = pickerEl?.parentElement;
+          if (pickerEl) pickerEl.value = val;
+          if (label) label.style.background = val;
+          updateEdPreview();
+        }
+      }
     });
-    updatePreview();
-  }
 
-  /** 更新预览卡片（与普通主题卡片一致的样式） */
-  function updatePreview(): void {
-    const config = getEditingConfig();
-    // 4 个色块 + 背景色，文字色用 baseContent
-    customPreviewSwatches.style.background = config.base100;
-    customPreviewSwatches.style.color = config.baseContent;
-    const swatchKeys = ["primary", "secondary", "accent", "neutral"] as const;
-    customPreviewSwatches.innerHTML = swatchKeys
-      .map(
-        (key) =>
-          `<span class="aspect-square rounded-full border border-base-content/15" style="background:${config[key]}"></span>`,
-      )
-      .join("");
-    // 主题名预览（颜色用 baseContent）
-    customNamePreview.value = config.name;
-    customNamePreview.style.color = config.baseContent;
+    nameInput.addEventListener("input", () => {
+      namePreview.value = nameInput.value || "Custom";
+    });
+
+    radiusBox.addEventListener("change", updateEdPreview);
+    modeSelect.addEventListener("change", updateEdPreview);
+
+    // 从当前主题载入
+    fromCurrentBtn.addEventListener("click", () => {
+      const currentTheme = getTheme();
+      const colors = readThemeColors(currentTheme);
+      applyConfig({ ...colors, id: config.id, name: nameInput.value.trim() || config.name });
+    });
+
+    function close(): void {
+      dialog.remove();
+      // 刷新图标
+      container.dispatchEvent(new CustomEvent("settings:icons-stale", { bubbles: true }));
+    }
+
+    cancelBtn.addEventListener("click", close);
+    backdrop.addEventListener("click", close);
+
+    saveBtn.addEventListener("click", () => {
+      const cfg = getEditing();
+      if (isNew) {
+        addCustomTheme(cfg);
+      } else {
+        updateCustomTheme(config.id, cfg);
+      }
+      close();
+      renderThemeView();
+    });
+
+    // 弹窗中的图标
+    container.dispatchEvent(new CustomEvent("settings:icons-stale", { bubbles: true }));
   }
 
   // ============== 更新状态 ==============
@@ -690,14 +870,8 @@ export function createUi(container: HTMLElement): SettingsUi {
     setLocale(radio.value as LocaleCode);
   });
 
-  // 主题模式选择
-  themeModeBox.addEventListener("change", (e) => {
-    const radio = (e.target as HTMLElement).closest<HTMLInputElement>(
-      "input[name='theme-mode']",
-    );
-    if (!radio) return;
-    setThemeMode(radio.value as ThemeMode);
-  });
+  // 主题入口：点击进入二级视图
+  themeEntry.addEventListener("click", showThemeView);
 
   // 底边栏样式选择
   navStyleBox.addEventListener("change", (e) => {
@@ -708,89 +882,54 @@ export function createUi(container: HTMLElement): SettingsUi {
     setNavStyle(radio.value as NavStyle);
   });
 
-  // 主题卡片选择（事件委托）
-  themePickerBox.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(
-      "[data-theme-set]",
-    );
-    if (!btn) return;
-    const theme = btn.dataset.themeSet as Theme;
-    const slot = btn.dataset.themeSlot as "light" | "dark";
-    if (slot === "light") {
-      setDefaultLightTheme(theme);
-    } else {
-      setDefaultDarkTheme(theme);
+  // 主题二级视图事件委托
+  themeView.addEventListener("click", (e) => {
+    // 返回主设置页
+    if ((e.target as HTMLElement).closest("#theme-back")) {
+      hideThemeView();
+      return;
+    }
+    // 新建自定义主题
+    if ((e.target as HTMLElement).closest("#custom-new")) {
+      openCustomEditor();
+      return;
+    }
+    // 编辑自定义主题
+    const editBtn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-custom-edit]");
+    if (editBtn) {
+      openCustomEditor(editBtn.dataset.customEdit);
+      return;
+    }
+    // 删除自定义主题
+    const deleteBtn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-custom-delete]");
+    if (deleteBtn && !deleteBtn.disabled) {
+      const id = deleteBtn.dataset.customDelete!;
+      deleteCustomTheme(id);
+      renderThemeView();
+      return;
+    }
+    // 主题卡片选择
+    const themeBtn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-theme-set]");
+    if (themeBtn) {
+      const theme = themeBtn.dataset.themeSet as Theme;
+      const slot = themeBtn.dataset.themeSlot as "light" | "dark";
+      if (slot === "light") setDefaultLightTheme(theme);
+      else setDefaultDarkTheme(theme);
     }
   });
 
-  // 槽位展开/收起状态同步
-  themePickerBox.addEventListener("change", (e) => {
-    const toggle = (e.target as HTMLElement).closest<HTMLInputElement>(
-      "[data-slot-toggle]",
-    );
-    if (!toggle) return;
-    const slot = toggle.dataset.slotToggle;
-    if (slot === "light") lightSlotExpanded = toggle.checked;
-    if (slot === "dark") darkSlotExpanded = toggle.checked;
-  });
-
-  // 自定义主题：颜色选择器实时更新
-  customColorsBox.addEventListener("input", (e) => {
-    const picker = (e.target as HTMLElement).closest<HTMLInputElement>(
-      "input[data-color-picker]",
-    );
-    const input = (e.target as HTMLElement).closest<HTMLInputElement>(
-      "input[data-color-input]",
-    );
-    if (picker) {
-      const key = picker.dataset.colorPicker!;
-      const textInput = customColorsBox.querySelector<HTMLInputElement>(
-        `input[data-color-input="${key}"]`,
-      );
-      const label = picker.parentElement;
-      if (textInput) textInput.value = picker.value;
-      if (label) label.style.background = picker.value;
-      updatePreview();
-    } else if (input) {
-      const val = input.value.trim();
-      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-        const key = input.dataset.colorInput!;
-        const pickerEl = customColorsBox.querySelector<HTMLInputElement>(
-          `input[data-color-picker="${key}"]`,
-        );
-        const label = pickerEl?.parentElement;
-        if (pickerEl) pickerEl.value = val;
-        if (label) label.style.background = val;
-        updatePreview();
-      }
+  // 主题模式选择 + 槽位展开状态同步
+  themeView.addEventListener("change", (e) => {
+    const modeRadio = (e.target as HTMLElement).closest<HTMLInputElement>("input[name='theme-mode']");
+    if (modeRadio) {
+      setThemeMode(modeRadio.value as ThemeMode);
+      return;
     }
-  });
-
-  // 自定义主题：主题名输入同步到预览
-  customNameInput.addEventListener("input", () => {
-    customNamePreview.value = customNameInput.value || "Custom";
-  });
-
-  // 自定义主题：圆角选择实时更新预览
-  customRadiusBox.addEventListener("change", () => {
-    updatePreview();
-  });
-
-  // 自定义主题：从当前激活主题读取颜色
-  customFromCurrentBtn.addEventListener("click", () => {
-    const currentTheme = getTheme();
-    const colors = readThemeColors(currentTheme);
-    applyConfigToEditor(colors);
-  });
-
-  // 自定义主题保存：保存后自动设为对应模式的默认主题
-  customSaveBtn.addEventListener("click", () => {
-    const config = getEditingConfig();
-    setCustomTheme(config);
-    if (config.mode === "light") {
-      setDefaultLightTheme("custom");
-    } else {
-      setDefaultDarkTheme("custom");
+    const toggle = (e.target as HTMLElement).closest<HTMLInputElement>("[data-slot-toggle]");
+    if (toggle) {
+      const slot = toggle.dataset.slotToggle;
+      if (slot === "light") lightSlotExpanded = toggle.checked;
+      if (slot === "dark") darkSlotExpanded = toggle.checked;
     }
   });
 
@@ -910,8 +1049,8 @@ export function createUi(container: HTMLElement): SettingsUi {
   }
 
   const offTheme = onThemeChange(() => {
-    renderThemeMode();
-    renderThemePicker();
+    updateThemeEntrySummary();
+    if (themeViewActive) renderThemeView();
     container.dispatchEvent(
       new CustomEvent("settings:icons-stale", { bubbles: true }),
     );

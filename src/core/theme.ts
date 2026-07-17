@@ -7,7 +7,8 @@
 
 // ============== 主题类型 ==============
 
-export type Theme =
+/** 内置主题名 */
+export type BuiltinTheme =
   | "light"
   | "dark"
   | "cupcake"
@@ -39,11 +40,16 @@ export type Theme =
   | "winter"
   | "dim"
   | "nord"
-  | "sunset"
-  | "custom";
+  | "sunset";
 
-/** 所有内置主题（不含 custom） */
-export const THEMES: Theme[] = [
+/**
+ * 主题标识：内置主题名或 "custom-<id>"（自定义主题）。
+ * 用 string 而非联合类型，因为自定义主题 id 是动态的。
+ */
+export type Theme = string;
+
+/** 所有内置主题 */
+export const THEMES: BuiltinTheme[] = [
   "light", "dark", "cupcake", "bumblebee", "emerald", "corporate",
   "synthwave", "retro", "cyberpunk", "valentine", "halloween", "garden",
   "forest", "aqua", "lofi", "pastel", "fantasy", "wireframe",
@@ -52,15 +58,15 @@ export const THEMES: Theme[] = [
   "nord", "sunset",
 ];
 
-/** 浅色主题 */
-export const LIGHT_THEMES: Theme[] = [
+/** 浅色内置主题 */
+export const LIGHT_THEMES: BuiltinTheme[] = [
   "light", "cupcake", "bumblebee", "emerald", "corporate", "valentine",
   "garden", "lofi", "pastel", "fantasy", "wireframe", "autumn",
   "lemonade", "winter", "nord", "retro",
 ];
 
-/** 深色主题 */
-export const DARK_THEMES: Theme[] = [
+/** 深色内置主题 */
+export const DARK_THEMES: BuiltinTheme[] = [
   "dark", "synthwave", "cyberpunk", "halloween", "forest", "aqua",
   "black", "luxury", "dracula", "cmyk", "business", "acid",
   "night", "coffee", "dim", "sunset",
@@ -68,12 +74,16 @@ export const DARK_THEMES: Theme[] = [
 
 /** 主题是浅色还是深色 */
 export function isLightTheme(theme: Theme): boolean {
-  if (theme === "custom") return getCustomTheme()?.mode === "light";
-  return LIGHT_THEMES.includes(theme);
+  if (isCustomTheme(theme)) {
+    const id = themeToCustomThemeId(theme);
+    if (!id) return true;
+    return getCustomThemeById(id)?.mode === "light";
+  }
+  return LIGHT_THEMES.includes(theme as BuiltinTheme);
 }
 
-/** 主题对应的中文名 i18n 键 */
-export const THEME_NAME_KEY: Record<Exclude<Theme, "custom">, string> = {
+/** 内置主题对应的中文名 i18n 键 */
+export const THEME_NAME_KEY: Record<BuiltinTheme, string> = {
   light: "modules.settings.theme.name.light",
   dark: "modules.settings.theme.name.dark",
   cupcake: "modules.settings.theme.name.cupcake",
@@ -130,10 +140,20 @@ export function setThemeMode(mode: ThemeMode): void {
   notifyListeners();
 }
 
+/** 校验主题标识是否有效（内置主题或已存在的自定义主题） */
+function isValidTheme(theme: string): boolean {
+  if (THEMES.includes(theme as BuiltinTheme)) return true;
+  if (isCustomTheme(theme)) {
+    const id = themeToCustomThemeId(theme);
+    return id !== null && getCustomThemeById(id) !== null;
+  }
+  return false;
+}
+
 /** 获取默认浅色主题 */
 export function getDefaultLightTheme(): Theme {
-  const saved = localStorage.getItem(DEFAULT_LIGHT_KEY) as Theme | null;
-  if (saved && (THEMES.includes(saved) || saved === "custom")) return saved;
+  const saved = localStorage.getItem(DEFAULT_LIGHT_KEY);
+  if (saved && isValidTheme(saved)) return saved;
   return "light";
 }
 
@@ -146,8 +166,8 @@ export function setDefaultLightTheme(theme: Theme): void {
 
 /** 获取默认深色主题 */
 export function getDefaultDarkTheme(): Theme {
-  const saved = localStorage.getItem(DEFAULT_DARK_KEY) as Theme | null;
-  if (saved && (THEMES.includes(saved) || saved === "custom")) return saved;
+  const saved = localStorage.getItem(DEFAULT_DARK_KEY);
+  if (saved && isValidTheme(saved)) return saved;
   return "dark";
 }
 
@@ -176,10 +196,7 @@ export function getTheme(): Theme {
 
 /** 应用当前活跃主题到 <html data-theme> */
 export function applyActiveTheme(): void {
-  // 确保自定义主题 CSS 已注入
-  if (getTheme() === "custom" || getDefaultLightTheme() === "custom" || getDefaultDarkTheme() === "custom") {
-    applyCustomThemeCss();
-  }
+  applyCustomThemeCss();
   const theme = getTheme();
   document.documentElement.setAttribute("data-theme", theme);
 }
@@ -234,11 +251,12 @@ function notifyListeners(): void {
   for (const cb of listeners) cb();
 }
 
-// ============== 自定义主题 ==============
+// ============== 自定义主题（多主题） ==============
 
 export type CustomRadius = "none" | "sm" | "md" | "lg" | "full";
 
 export interface CustomThemeConfig {
+  id: string;
   mode: "light" | "dark";
   name: string;
   primary: string;
@@ -259,46 +277,124 @@ export const RADIUS_VALUES: Record<CustomRadius, string> = {
   full: "2rem",
 };
 
-const CUSTOM_THEME_KEY = "mc-toolbox.custom-theme";
+const CUSTOM_THEMES_KEY = "mc-toolbox.custom-themes";
 
-const DEFAULT_CUSTOM: CustomThemeConfig = {
-  mode: "light",
-  name: "Custom",
+const CUSTOM_DEFAULT_COLORS = {
   primary: "#5d9e38",
   secondary: "#8b6914",
   accent: "#c41e3a",
   neutral: "#707070",
   base100: "#c6c6c6",
   baseContent: "#2b2b2b",
-  radius: "lg",
 };
 
-export { DEFAULT_CUSTOM };
+/** 创建一个默认配置的自定义主题（用于新建） */
+export function createDefaultCustomTheme(mode: "light" | "dark" = "light"): CustomThemeConfig {
+  return {
+    id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    mode,
+    name: mode === "light" ? "Custom Light" : "Custom Dark",
+    ...CUSTOM_DEFAULT_COLORS,
+    radius: "lg",
+  };
+}
 
-/** 获取自定义主题配置 */
-export function getCustomTheme(): CustomThemeConfig | null {
+/** 读取所有自定义主题 */
+export function getAllCustomThemes(): CustomThemeConfig[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(CUSTOM_THEME_KEY) ?? "");
-    if (saved && typeof saved.primary === "string") {
-      return { ...DEFAULT_CUSTOM, ...saved };
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_THEMES_KEY) ?? "");
+    if (Array.isArray(saved)) {
+      return saved.filter((c) => c && typeof c.id === "string" && typeof c.primary === "string");
+    }
+    // 旧版单主题迁移
+    const legacy = JSON.parse(localStorage.getItem("mc-toolbox.custom-theme") ?? "");
+    if (legacy && typeof legacy.primary === "string") {
+      const migrated: CustomThemeConfig = {
+        id: `custom_migrated_${Date.now()}`,
+        mode: legacy.mode ?? "light",
+        name: legacy.name ?? "Custom",
+        primary: legacy.primary,
+        secondary: legacy.secondary,
+        accent: legacy.accent,
+        neutral: legacy.neutral,
+        base100: legacy.base100,
+        baseContent: legacy.baseContent,
+        radius: legacy.radius ?? "lg",
+      };
+      saveAllCustomThemes([migrated]);
+      return [migrated];
     }
   } catch {
     // ignore
   }
-  return null;
+  return [];
 }
 
-/** 保存自定义主题配置并应用 */
-export function setCustomTheme(config: CustomThemeConfig): void {
-  localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(config));
+/** 保存所有自定义主题 */
+export function saveAllCustomThemes(themes: CustomThemeConfig[]): void {
+  localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(themes));
   applyCustomThemeCss();
   applyActiveTheme();
   notifyListeners();
 }
 
-/** 判断主题是否为自定义 */
+/** 按 id 查找自定义主题 */
+export function getCustomThemeById(id: string): CustomThemeConfig | null {
+  return getAllCustomThemes().find((c) => c.id === id) ?? null;
+}
+
+/** 新增自定义主题，返回新主题 */
+export function addCustomTheme(config: CustomThemeConfig): CustomThemeConfig {
+  const themes = getAllCustomThemes();
+  themes.push(config);
+  saveAllCustomThemes(themes);
+  return config;
+}
+
+/** 更新指定 id 的自定义主题 */
+export function updateCustomTheme(id: string, config: CustomThemeConfig): void {
+  const themes = getAllCustomThemes();
+  const idx = themes.findIndex((c) => c.id === id);
+  if (idx >= 0) {
+    themes[idx] = { ...config, id };
+    saveAllCustomThemes(themes);
+  }
+}
+
+/** 删除指定 id 的自定义主题 */
+export function deleteCustomTheme(id: string): void {
+  const themes = getAllCustomThemes().filter((c) => c.id !== id);
+  saveAllCustomThemes(themes);
+  // 如果删除的是当前默认主题，回退到内置主题
+  const light = getDefaultLightTheme();
+  const dark = getDefaultDarkTheme();
+  if (light === ("custom-" + id) as Theme) setDefaultLightTheme("light");
+  if (dark === ("custom-" + id) as Theme) setDefaultDarkTheme("dark");
+}
+
+/** 自定义主题 id → Theme 字符串（用于 data-theme 和默认主题存储） */
+export function customThemeIdToTheme(id: string): Theme {
+  return ("custom-" + id) as Theme;
+}
+
+/** Theme 字符串 → 自定义主题 id（如果不是自定义主题返回 null） */
+export function themeToCustomThemeId(theme: Theme): string | null {
+  if (typeof theme === "string" && theme.startsWith("custom-")) {
+    return theme.slice("custom-".length);
+  }
+  return null;
+}
+
+/** 判断主题是否为自定义主题 */
 export function isCustomTheme(theme: Theme): boolean {
-  return theme === "custom";
+  return typeof theme === "string" && theme.startsWith("custom-");
+}
+
+/** 获取自定义主题的显示名 */
+export function customThemeDisplayName(theme: Theme): string {
+  const id = themeToCustomThemeId(theme);
+  if (!id) return "Custom";
+  return getCustomThemeById(id)?.name ?? "Custom";
 }
 
 /** hex 转 OKLCH 分量（DaisyUI v4 格式：L% C H） */
@@ -352,19 +448,9 @@ function darken(hex: string, amount: number): string {
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
-/** 将自定义主题注入为 CSS */
-export function applyCustomThemeCss(): void {
-  const config = getCustomTheme();
-  if (!config) return;
-
-  const styleId = "mc-toolbox-custom-theme";
-  let style = document.getElementById(styleId);
-  if (!style) {
-    style = document.createElement("style");
-    style.id = styleId;
-    document.head.appendChild(style);
-  }
-
+/** 把单个自定义主题配置转成 CSS 规则文本 */
+function customThemeToCss(config: CustomThemeConfig): string {
+  const themeAttr = customThemeIdToTheme(config.id);
   const p = hexToOklch(config.primary);
   const pc = hexToOklch(contrastColor(config.primary));
   const s = hexToOklch(config.secondary);
@@ -379,8 +465,8 @@ export function applyCustomThemeCss(): void {
   const bc = hexToOklch(config.baseContent);
   const radius = RADIUS_VALUES[config.radius];
 
-  style.textContent = `
-    [data-theme="custom"] {
+  return `
+    [data-theme="${themeAttr}"] {
       color-scheme: ${config.mode};
       --p: ${p};
       --pc: ${pc};
@@ -409,6 +495,23 @@ export function applyCustomThemeCss(): void {
   `;
 }
 
+/** 把所有自定义主题注入为 CSS */
+export function applyCustomThemeCss(): void {
+  const themes = getAllCustomThemes();
+  const styleId = "mc-toolbox-custom-theme";
+  let style = document.getElementById(styleId);
+  if (themes.length === 0) {
+    if (style) style.textContent = "";
+    return;
+  }
+  if (!style) {
+    style = document.createElement("style");
+    style.id = styleId;
+    document.head.appendChild(style);
+  }
+  style.textContent = themes.map(customThemeToCss).join("\n");
+}
+
 // ============== 读取主题颜色 ==============
 
 /** rgb()/rgba() 字符串转 #hex */
@@ -424,15 +527,24 @@ function rgbToHex(rgb: string): string {
 /**
  * 读取任意主题的实际渲染颜色。
  * 通过临时挂载带 data-theme 的探测元素，读取 bg-primary 等类的计算样式。
+ * 返回的 config.id/name 为占位值，调用方应自行设置。
  */
-export function readThemeColors(theme: Theme): CustomThemeConfig {
-  if (theme === "custom") {
-    const saved = getCustomTheme();
-    if (saved) return saved;
+export function readThemeColors(theme: Theme): Omit<CustomThemeConfig, "id"> {
+  // 自定义主题直接读存储
+  if (isCustomTheme(theme)) {
+    const id = themeToCustomThemeId(theme);
+    if (id) {
+      const saved = getCustomThemeById(id);
+      if (saved) {
+        const { id: _id, ...rest } = saved;
+        void _id;
+        return rest;
+      }
+    }
   }
 
   const probe = document.createElement("div");
-  probe.setAttribute("data-theme", theme === "custom" ? "light" : theme);
+  probe.setAttribute("data-theme", theme);
   probe.style.cssText =
     "position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden";
   probe.innerHTML =
@@ -444,17 +556,16 @@ export function readThemeColors(theme: Theme): CustomThemeConfig {
     '<span class="text-base-content"></span>';
   document.body.appendChild(probe);
   const spans = probe.querySelectorAll("span");
-  const saved = getCustomTheme();
-  const result: CustomThemeConfig = {
-    mode: isLightTheme(theme) ? "light" : "dark",
-    name: theme === "custom" ? (saved?.name ?? "Custom") : "Custom",
+  const result = {
+    mode: (isLightTheme(theme) ? "light" : "dark") as "light" | "dark",
+    name: "Custom",
     primary: rgbToHex(getComputedStyle(spans[0]).backgroundColor),
     secondary: rgbToHex(getComputedStyle(spans[1]).backgroundColor),
     accent: rgbToHex(getComputedStyle(spans[2]).backgroundColor),
     neutral: rgbToHex(getComputedStyle(spans[3]).backgroundColor),
     base100: rgbToHex(getComputedStyle(spans[4]).backgroundColor),
     baseContent: rgbToHex(getComputedStyle(spans[5]).color),
-    radius: theme === "custom" ? (saved?.radius ?? "lg") : "lg",
+    radius: "lg" as CustomRadius,
   };
   document.body.removeChild(probe);
   return result;
